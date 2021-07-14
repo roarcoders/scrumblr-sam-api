@@ -3,21 +3,22 @@ const express = require('express')
 const app = express()
 const router = express.Router()
 const LorenIpsum = require('lorem-ipsum').loremIpsum
-const port = 3000
+//const port = 3000
 const { v4: uuidv4 } = require('uuid')
 const AWS = require('aws-sdk')
 
 router.use(express.json())
 router.use(express.urlencoded({extended: true}))
 
-AWS.config.update({
-    region:'ap-southeast-2',
-    endpoint:'arn:aws:dynamodb:ap-southeast-2:660741582805:table/scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
-})
+// AWS.config.update({
+//     region:'ap-southeast-2',
+//     endpoint:'arn:aws:dynamodb:ap-southeast-2:660741582805:table/scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
+// })
+let DevCop = [];
 
-const docClient = new AWS.DynamoDB.DocumentClient()
+//const docClient = new AWS.DynamoDB.DocumentClient()
 
-const table = 'scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
+//const table = 'scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
 
 // app.use((req, res, next) => {
 //     res.header("Access-Control-Allow-Origin", "*");
@@ -31,100 +32,140 @@ const table = 'scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
 //   });
 
 //Create a board with 3 sample notes
-router.get("/", function(req, res){
-    let board = {
-        board_id: uuidv4(),
-        board_notes: [
-            {
-                "note_id": uuidv4(),
-                "topic": new LorenIpsum(),
-                "creation_date": Date.now()
-            },
-            {
-                "note_id": uuidv4(),
-                "topic":new LorenIpsum(),
-                "creation_date": Date.now()
-            },
-            {
-                "note_id":uuidv4(),
-                "topic":new LorenIpsum(),
-                "creation_date": Date.now()
-            }
-        ]
-    }
-    DevCop.push(board);
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(DevCop));
-})
+// router.get("/", function(req, res){
+//     let board = {
+//         board_id: uuidv4(),
+//         board_notes: [
+//             {
+//                 "note_id": uuidv4(),
+//                 "topic": new LorenIpsum(),
+//                 "creation_date": Date.now()
+//             },
+//             {
+//                 "note_id": uuidv4(),
+//                 "topic":new LorenIpsum(),
+//                 "creation_date": Date.now()
+//             },
+//             {
+//                 "note_id":uuidv4(),
+//                 "topic":new LorenIpsum(),
+//                 "creation_date": Date.now()
+//             }
+//         ]
+//     }
+//     DevCop.push(board);
+//     res.setHeader('Content-Type', 'application/json');
+//     res.send(JSON.stringify(DevCop));
+// })
 
 //List all boards in memory(array)
 router.get("/board", async(req, res) => {
-    let params = {
-        TableName: table
-    }
+    // let params = {
+    //     TableName: table
+    // }
 
-    const data = await docClient.scan(params).promise();
-    res.send(JSON.stringify(data))
+    // const data = await docClient.scan(params).promise();
+    res.send(JSON.stringify(DevCop))
 })
 
 //Get a particular board
 router.get("/board/:boardId", async(req,res) => {
 
-    let board_id
-    if (!('boardId' in req.params)){
-        board_id = ""
-    }
-    else {
-        board_id = req.params.boardId
-    }
+        let board_id
+        if (!('boardId' in req.params)){
+            board_id = ""
+        }
+        else {
+            board_id = req.params.boardId
+        }
+        let data = {}
+        let board
+        let counter=0
+        
+        for (board in DevCop){ 
+            if(DevCop[board].boardId === board_id){
+                data=DevCop[board]  
+                counter=counter+1
 
-    let params = {
-        TableName: table
-    }
-
-    const tableRows = await docClient.scan(params).promise();
-    let result
-
-    for (let row in tableRows.Items){
-        if (tableRows.Items[row].BoardId === board_id)
-        {
-            let params1 = {
-                TableName: table,
-                Key: {
-                    "BoardId": board_id
-                }
-            }
-            try {
-                result = await docClient.get(params1).promise();
-            } catch (error) {
-                res.send(JSON.stringify(error))
             }
         }
-    }
-    res.send(JSON.stringify(result))
-})
+        console.log(counter)
+        console.log(board_id)
+        
+
+        try {
+        res.send(JSON.stringify(data))
+        }
+        catch (error){
+            res.send(JSON.stringify(error))
+        }
+    })
+        
+    
+    // let board_id
+    // if (!('boardId' in req.params)){
+    //     board_id = ""
+    // }
+    // else {
+    //     board_id = req.params.boardId
+    // }
+
+    // let params = {
+    //     TableName: table
+    // }
+
+    // const tableRows = await docClient.scan(params).promise();
+    // let result
+
+    // for (let row in tableRows.Items){
+    //     if (tableRows.Items[row].BoardId === board_id)
+    //     {
+    //         let params1 = {
+    //             TableName: table,
+    //             Key: {
+    //                 "BoardId": board_id
+    //             }
+    //         }
+    //         try {
+    //             result = await docClient.get(params1).promise();
+    //         } catch (error) {
+    //             res.send(JSON.stringify(error))
+    //         }
+    //     }
+    // }
+    // res.send(JSON.stringify(result))
+
 
 //Create a new board
 router.post('/board', async(req, res) => {
-    const boardId = uuidv4();
+    const boardId = uuidv4()
 
-    let params = {
-        TableName : table,
-        Item: {
-            BoardId: boardId,
-            board_notes: [
+    let board = {
+        boardId: boardId,
+        board_notes: [
 
-            ]
-        }
+        ]
     }
-
-    try{
-     await docClient.put(params).promise();
-    } catch (error){
-        res.send(JSON.stringify(error))    
-    }
-    res.send(JSON.stringify(params))
+    DevCop.push(board)
+    res.send(JSON.stringify(board))
 })
+
+    // let params = {
+    //     TableName : table,
+    //     Item: {
+    //         BoardId: boardId,
+    //         board_notes: [
+
+    //         ]
+    //     }
+    // }
+
+    // try{
+    //  await docClient.put(params).promise();
+    // } catch (error){
+    //     res.send(JSON.stringify(error))    
+    // }
+    // res.send(JSON.stringify(params))
 
 //Delete a specific board
 router.delete('/board/:boardId', async(req, res) => {
@@ -136,29 +177,41 @@ router.delete('/board/:boardId', async(req, res) => {
         board_id = req.params.boardId
     }
 
-    let params = {
-        TableName: table
-    }
-
-    let boards = await docClient.scan(params).promise();
-    let deleteBoard
-    
-    for(let board in boards.Items){
-        if(boards.Items[board].BoardId === board_id){
-            let params1 = {
-                TableName: table,
-                Key: {
-                    "BoardId": board_id
-                }
-            }
-            try {
-                deleteBoard = await docClient.delete(params1).promise();
-                res.send(JSON.stringify("deleted successfully"))
-            } catch (error){
-                res.send(JSON.stringify("Error occured while deleting -> " + error))
-            }
+    for (let board in DevCop){
+        if (DevCop[board].boardId === board_id){
+            DevCop.splice(board,1)
         }
     }
+    try{
+    res.sendStatus(200)
+    } catch(error){
+        res.sendStatus(500)
+    }
+    
+
+    // let params = {
+    //     TableName: table
+    // }
+
+    // let boards = await docClient.scan(params).promise();
+    // let deleteBoard
+    
+    // for(let board in boards.Items){
+    //     if(boards.Items[board].BoardId === board_id){
+    //         let params1 = {
+    //             TableName: table,
+    //             Key: {
+    //                 "BoardId": board_id
+    //             }
+    //         }
+    //         try {
+    //             deleteBoard = await docClient.delete(params1).promise();
+    //             res.send(JSON.stringify("deleted successfully"))
+    //         } catch (error){
+    //             res.send(JSON.stringify("Error occured while deleting -> " + error))
+    //         }
+    //     }
+    // }
 })
 
 //Create a note for a specified board
@@ -177,33 +230,49 @@ router.post('/board/:boardId/note', async(req, res) => {
         "dateCrated": Date.now()
     }
 
-    let params = {
-        TableName:table
-    }
-    
-    let boards = await docClient.scan(params).promise();
-    for (let board in boards.Items){
-        if(boards.Items[board].BoardId === board_id){
-
-            let updateBoard = {
-                TableName: table,
-                Key:{
-                    "BoardId": board_id
-                },
-                UpdateExpression: "SET board_notes = list_append(board_notes,:note)",
-                ExpressionAttributeValues: {
-                    ":note": [singleNote]
-                }
-            }
-
-            try {
-                await docClient.update(updateBoard).promise();
-                res.send(JSON.stringify("Note Inserted Successfully"))  
-            } catch (error) {
-                res.send(JSON.stringify(error))
-            }
+    for (let board in DevCop){
+        if(DevCop[board].boardId === board_id){
+            DevCop[board].board_notes.push(singleNote)
         }
     }
+    try{
+        res.send(JSON.stringify(singleNote))
+    }
+    catch(error)
+    {
+        res.send(JSON.stringify(error))
+    }
+
+
+
+
+    // let params = {
+    //     TableName:table
+    // }
+    
+    // let boards = await docClient.scan(params).promise();
+    // for (let board in boards.Items){
+    //     if(boards.Items[board].BoardId === board_id){
+
+    //         let updateBoard = {
+    //             TableName: table,
+    //             Key:{
+    //                 "BoardId": board_id
+    //             },
+    //             UpdateExpression: "SET board_notes = list_append(board_notes,:note)",
+    //             ExpressionAttributeValues: {
+    //                 ":note": [singleNote]
+    //             }
+    //         }
+
+    //         try {
+    //             await docClient.update(updateBoard).promise();
+    //             res.send(JSON.stringify("Note Inserted Successfully"))  
+    //         } catch (error) {
+    //             res.send(JSON.stringify(error))
+    //         }
+    //     }
+    // }
 })
 
 // Delete a particular note from a particular board
@@ -211,7 +280,7 @@ router.delete('/board/:boardId/note/:noteId', async(req, res) => {
     let board_id
     let note_id
 
-    if (!('boardId' in req.params) && ('notedId' in req.params)){
+    if (!('boardId' in req.params) && ('noteId' in req.params)){
         board_id = ""
         note_id = ""
     }
@@ -220,34 +289,42 @@ router.delete('/board/:boardId/note/:noteId', async(req, res) => {
         note_id = req.params.noteId
     }
 
-    let params = {
-        TableName: table
-    }
+    // let params = {
+    //     TableName: table
+    // }
 
-    let boards = await docClient.scan(params).promise();
+    // let boards = await docClient.scan(params).promise();
     
-    for (let board in boards.Items){
-        if(boards.Items[board].BoardId === board_id){
-            for(let note in boards.Items[board].board_notes){
-                if(boards.Items[board].board_notes[note].note_id === note_id){
+    for (let board in DevCop){
+        if(DevCop[board].boardId === board_id){
+            for(let note in DevCop[board].board_notes){
+                if(DevCop[board].board_notes[note].note_id === note_id){
+                    DevCop[board].board_notes.splice(DevCop[board].board_notes[note],1)
                     
-                    let deleteNote = {
-                        TableName: table,
-                        Key: {
-                            "BoardId": board_id
-                        },
-                        UpdateExpression: "REMOVE board_notes[" + note + "]"
-                    }
+                    // let deleteNote = {
+                    //     TableName: table,
+                    //     Key: {
+                    //         "BoardId": board_id
+                    //     },
+                    //     UpdateExpression: "REMOVE board_notes[" + note + "]"
+                    // }
 
-                    try {
-                        await docClient.update(deleteNote).promise();
-                        res.send(JSON.stringify("Note deleted successfully"))
-                    } catch (error){
-                        res.send(JSON.stringify("Error occurred : " + error))
-                    }
+                    // try {
+                    //     await docClient.update(deleteNote).promise();
+                    //     res.send(JSON.stringify("Note deleted successfully"))
+                    // } catch (error){
+                    //     res.send(JSON.stringify("Error occurred : " + error))
+                    // }
                 }
             }   
         }
+    }
+    try{
+        res.send(JSON.stringify(DevCop[board].board_notes))
+    }
+    catch(error)
+    {
+        res.send(JSON.stringify(error))
     }
 })
 
@@ -348,8 +425,8 @@ router.get('/board/:boardId/note/:noteId', async(req, res) => {
 
 app.use('/', router)
 
-app.listen(port, () => {
-    console.log(`App listening at http://localhost:${port}`)
-})
+// app.listen(port, () => {
+//     console.log(`App listening at http://localhost:${port}`)
+// })
 
 module.exports = app;

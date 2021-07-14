@@ -126,6 +126,7 @@ $RECYCLE.BIN/
 *.lnk
 
 ./scrumblr-api/node_modules
+.aws-sam
 
 
 # End of https://www.gitignore.io/api/osx,node,linux,windows
