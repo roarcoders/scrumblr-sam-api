@@ -16,44 +16,6 @@ const docClient = new AWS.DynamoDB.DocumentClient()
 
 const table = 'scrumblr-api-1-ScrumblrDB-YNZ5VH51RIPV'
 
-// app.use((req, res, next) => {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header('Access-Control-Allow-Methods', 'OPTIONS,GET,PUT,POST,DELETE');
-//     res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept");
-//   //   res.header(
-//   //     "Access-Control-Allow-Headers",
-//   //     "Origin, X-Requested-With, Content-Type, Accept"
-//   //   );
-//     next();
-//   });
-
-//Create a board with 3 sample notes
-// router.get("/", function(req, res){
-//     let board = {
-//         board_id: uuidv4(),
-//         board_notes: [
-//             {
-//                 "note_id": uuidv4(),
-//                 "topic": new LorenIpsum(),
-//                 "creation_date": Date.now()
-//             },
-//             {
-//                 "note_id": uuidv4(),
-//                 "topic":new LorenIpsum(),
-//                 "creation_date": Date.now()
-//             },
-//             {
-//                 "note_id":uuidv4(),
-//                 "topic":new LorenIpsum(),
-//                 "creation_date": Date.now()
-//             }
-//         ]
-//     }
-//     DevCop.push(board);
-//     res.setHeader('Content-Type', 'application/json');
-//     res.send(JSON.stringify(DevCop));
-// })
-
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
   let params = {
@@ -72,28 +34,6 @@ router.get("/board", async (req, res) => {
 
 //Get a particular board
 router.get("/board/:boardId", async (req, res) => {
-  //let board_id;
-  // if (!("boardId" in req.params)) {
-  //   board_id = "";
-  // } else {
-  //   board_id = req.params.boardId;
-  // }
-  // let data = {};
-  // let board;
-
-  // for (board in DevCop) {
-  //   if (DevCop[board].boardId === board_id) {
-  //     data = DevCop[board];
-  //   }
-  // }
-
-
-  // try {
-  //   res.send(JSON.stringify(data));
-  // } catch (error) {
-  //   res.send(JSON.stringify(error));
-  // }
-
 
 let board_id
 if (!('boardId' in req.params)){
@@ -134,14 +74,6 @@ for (let row in tableRows.Items){
 router.post("/board", async (req, res) => {
   const boardId = uuidv4();
 
-//   let board = {
-//     boardId: boardId,
-//     board_notes: [],
-//   };
-//   DevCop.push(board);
-//   res.send(JSON.stringify(board));
-// });
-
 let params = {
     TableName : table,
     Item: {
@@ -171,17 +103,6 @@ router.delete("/board/:boardId", async (req, res) => {
   } else {
     board_id = req.params.boardId;
   }
-
-  // for (let board in DevCop) {
-  //   if (DevCop[board].boardId === board_id) {
-  //     DevCop.splice(board, 1);
-  //   }
-  // }
-  // try {
-  //   res.sendStatus(200);
-  // } catch (error) {
-  //   res.sendStatus(500);
-  // }
 
   let params = {
       TableName: table
