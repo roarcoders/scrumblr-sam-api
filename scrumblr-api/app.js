@@ -3,22 +3,18 @@ const express = require("express");
 const app = express();
 const router = express.Router();
 const LorenIpsum = require("lorem-ipsum").loremIpsum;
-const port = 3000;
+//const port = 3000;
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-// AWS.config.update({
-//     region:'ap-southeast-2',
-//     endpoint:'arn:aws:dynamodb:ap-southeast-2:660741582805:table/scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
-// })
 let DevCop = [];
 
-//const docClient = new AWS.DynamoDB.DocumentClient()
+const docClient = new AWS.DynamoDB.DocumentClient()
 
-//const table = 'scrumblr-api-ScrumblrDB-1IS0A6PFAQEK7'
+const table = 'scrumblr-api-1-ScrumblrDB-YNZ5VH51RIPV'
 
 // app.use((req, res, next) => {
 //     res.header("Access-Control-Allow-Origin", "*");
@@ -60,103 +56,111 @@ let DevCop = [];
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
-  // let params = {
-  //     TableName: table
-  // }
+  let params = {
+      TableName: table
+  }
 
-  // const data = await docClient.scan(params).promise();
-  res.send(JSON.stringify(DevCop));
+  let data
+
+  try{
+  data = await docClient.scan(params).promise();
+  } catch (error){
+    res.send(JSON.stringify(error));
+  }
+  res.send(JSON.stringify(data));
 });
 
 //Get a particular board
 router.get("/board/:boardId", async (req, res) => {
-  let board_id;
-  if (!("boardId" in req.params)) {
-    board_id = "";
-  } else {
-    board_id = req.params.boardId;
-  }
-  let data = {};
-  let board;
-  let counter = 0;
+  //let board_id;
+  // if (!("boardId" in req.params)) {
+  //   board_id = "";
+  // } else {
+  //   board_id = req.params.boardId;
+  // }
+  // let data = {};
+  // let board;
 
-  for (board in DevCop) {
-    if (DevCop[board].boardId === board_id) {
-      data = DevCop[board];
-      counter = counter + 1;
+  // for (board in DevCop) {
+  //   if (DevCop[board].boardId === board_id) {
+  //     data = DevCop[board];
+  //   }
+  // }
+
+
+  // try {
+  //   res.send(JSON.stringify(data));
+  // } catch (error) {
+  //   res.send(JSON.stringify(error));
+  // }
+
+
+let board_id
+if (!('boardId' in req.params)){
+    board_id = ""
+}
+else {
+    board_id = req.params.boardId
+}
+
+let params = {
+    TableName: table
+}
+
+const tableRows = await docClient.scan(params).promise();
+let data
+
+for (let row in tableRows.Items){
+    if (tableRows.Items[row].BoardId === board_id)
+    {
+        let params1 = {
+            TableName: table,
+            Key: {
+                "BoardId": board_id
+            }
+        }
+        try {
+            data = await docClient.get(params1).promise();
+            res.send(data)
+        } catch (error) {
+            res.send(JSON.stringify(error))
+        }
     }
-  }
-  console.log(counter);
-  console.log(board_id);
+}
 
-  try {
-    res.send(JSON.stringify(data));
-  } catch (error) {
-    res.send(JSON.stringify(error));
-  }
 });
-
-// let board_id
-// if (!('boardId' in req.params)){
-//     board_id = ""
-// }
-// else {
-//     board_id = req.params.boardId
-// }
-
-// let params = {
-//     TableName: table
-// }
-
-// const tableRows = await docClient.scan(params).promise();
-// let result
-
-// for (let row in tableRows.Items){
-//     if (tableRows.Items[row].BoardId === board_id)
-//     {
-//         let params1 = {
-//             TableName: table,
-//             Key: {
-//                 "BoardId": board_id
-//             }
-//         }
-//         try {
-//             result = await docClient.get(params1).promise();
-//         } catch (error) {
-//             res.send(JSON.stringify(error))
-//         }
-//     }
-// }
-// res.send(JSON.stringify(result))
 
 //Create a new board
 router.post("/board", async (req, res) => {
   const boardId = uuidv4();
 
-  let board = {
-    boardId: boardId,
-    board_notes: [],
-  };
-  DevCop.push(board);
-  res.send(JSON.stringify(board));
-});
+//   let board = {
+//     boardId: boardId,
+//     board_notes: [],
+//   };
+//   DevCop.push(board);
+//   res.send(JSON.stringify(board));
+// });
 
-// let params = {
-//     TableName : table,
-//     Item: {
-//         BoardId: boardId,
-//         board_notes: [
+let params = {
+    TableName : table,
+    Item: {
+        BoardId: boardId,
+        board_notes: [
 
-//         ]
-//     }
-// }
+        ]
+    }
+}
 
-// try{
-//  await docClient.put(params).promise();
-// } catch (error){
-//     res.send(JSON.stringify(error))
-// }
-// res.send(JSON.stringify(params))
+let data
+
+try{
+  data = await docClient.put(params).promise();
+  res.send(data.items)
+} catch (error){
+    res.send(JSON.stringify(error))
+}
+})
 
 //Delete a specific board
 router.delete("/board/:boardId", async (req, res) => {
@@ -168,40 +172,40 @@ router.delete("/board/:boardId", async (req, res) => {
     board_id = req.params.boardId;
   }
 
-  for (let board in DevCop) {
-    if (DevCop[board].boardId === board_id) {
-      DevCop.splice(board, 1);
-    }
-  }
-  try {
-    res.sendStatus(200);
-  } catch (error) {
-    res.sendStatus(500);
-  }
-
-  // let params = {
-  //     TableName: table
+  // for (let board in DevCop) {
+  //   if (DevCop[board].boardId === board_id) {
+  //     DevCop.splice(board, 1);
+  //   }
+  // }
+  // try {
+  //   res.sendStatus(200);
+  // } catch (error) {
+  //   res.sendStatus(500);
   // }
 
-  // let boards = await docClient.scan(params).promise();
-  // let deleteBoard
+  let params = {
+      TableName: table
+  }
 
-  // for(let board in boards.Items){
-  //     if(boards.Items[board].BoardId === board_id){
-  //         let params1 = {
-  //             TableName: table,
-  //             Key: {
-  //                 "BoardId": board_id
-  //             }
-  //         }
-  //         try {
-  //             deleteBoard = await docClient.delete(params1).promise();
-  //             res.send(JSON.stringify("deleted successfully"))
-  //         } catch (error){
-  //             res.send(JSON.stringify("Error occured while deleting -> " + error))
-  //         }
-  //     }
-  // }
+  let boards = await docClient.scan(params).promise();
+  let data
+
+  for(let board in boards.Items){
+      if(boards.Items[board].BoardId === board_id){
+          let params1 = {
+              TableName: table,
+              Key: {
+                  "BoardId": board_id
+              }
+          }
+          try {
+            data = await docClient.delete(params1).promise();
+              res.send("DELETED BOARD" + data)
+          } catch (error){
+              res.send(JSON.stringify("Error occured while deleting -> " + error))
+          }
+      }
+  }
 });
 
 //Create a note for a specified board
@@ -327,10 +331,12 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 
   let board;
   let note;
-  
-  board = DevCop.find(board_Id=>board_Id.boardId === board_id)
-  note = board.board_notes.find(currentNote=>currentNote.note_id === note_id)
-  note.topic = textForNote
+
+  board = DevCop.find((board_Id) => board_Id.boardId === board_id);
+  note = board.board_notes.find(
+    (currentNote) => currentNote.note_id === note_id
+  );
+  note.topic = textForNote;
 
   try {
     res.send(JSON.stringify(note));
@@ -418,8 +424,8 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
 
 app.use("/", router);
 
-app.listen(port, () => {
-  console.log(`App listening at http://localhost:${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`App listening at http://localhost:${port}`);
+// });
 
 module.exports = app;
