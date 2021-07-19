@@ -3,12 +3,14 @@ const express = require("express");
 const app = express();
 const router = express.Router();
 const LorenIpsum = require("lorem-ipsum").loremIpsum;
-//const port = 3000;
+//const port = 3000; // for local testing
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
+
+
 
 let DevCop = [];
 
@@ -145,44 +147,33 @@ router.post("/board/:boardId/note", async (req, res) => {
     dateCrated: Date.now(),
   };
 
-  for (let board in DevCop) {
-    if (DevCop[board].boardId === board_id) {
-      DevCop[board].board_notes.push(singleNote);
-    }
-  }
-  try {
-    res.send(JSON.stringify(singleNote));
-  } catch (error) {
-    res.send(JSON.stringify(error));
+  let params = {
+      TableName:table
   }
 
-  // let params = {
-  //     TableName:table
-  // }
+  let boards = await docClient.scan(params).promise();
+  for (let board in boards.Items){
+      if(boards.Items[board].BoardId === board_id){
 
-  // let boards = await docClient.scan(params).promise();
-  // for (let board in boards.Items){
-  //     if(boards.Items[board].BoardId === board_id){
+          let updateBoard = {
+              TableName: table,
+              Key:{
+                  "BoardId": board_id
+              },
+              UpdateExpression: "SET board_notes = list_append(board_notes,:note)",
+              ExpressionAttributeValues: {
+                  ":note": [singleNote]
+              }
+          }
 
-  //         let updateBoard = {
-  //             TableName: table,
-  //             Key:{
-  //                 "BoardId": board_id
-  //             },
-  //             UpdateExpression: "SET board_notes = list_append(board_notes,:note)",
-  //             ExpressionAttributeValues: {
-  //                 ":note": [singleNote]
-  //             }
-  //         }
-
-  //         try {
-  //             await docClient.update(updateBoard).promise();
-  //             res.send(JSON.stringify("Note Inserted Successfully"))
-  //         } catch (error) {
-  //             res.send(JSON.stringify(error))
-  //         }
-  //     }
-  // }
+          try {
+              await docClient.update(updateBoard).promise();
+              res.send(JSON.stringify("Note Inserted Successfully"))
+          } catch (error) {
+              res.send(JSON.stringify(error))
+          }
+      }
+  }
 });
 
 // Delete a particular note from a particular board
@@ -301,6 +292,7 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 });
 
 // Get a specific note
+
 router.get("/board/:boardId/note/:noteId", async (req, res) => {
   let note_id;
   let board_id;
@@ -316,31 +308,32 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
   let params = {
     TableName: table,
     KeyConditionExpression: "BoardId = :boardId",
-    ExpressionAttributeValues: {
-      ":boardId": board_id,
-    },
-  };
-
-  let board = await docClient.query(params).promise();
-  for (let note in board.Items) {
-    if (board.Items[note].board_notes[note].note_id === note_id) {
-      let params1 = {
-        TableName: table,
-        KeyConditionExpression: "BoardId = :board_id",
-        FilterExpression: "contains(board_notes, :note)",
-        ExpressionAttributeValues: {
-          ":board_id": board_id,
-          ":note": board.Items[note].board_notes[note],
-        },
-      };
-      try {
-        await docClient.query(params1).promise();
-        res.send(JSON.stringify(board.Items[note].board_notes[note]));
-      } catch (error) {
-        res.send(JSON.stringify(error));
-      }
+    ExpressionAttributeValues : {
+        ":boardId": board_id
     }
-  }
+}
+
+let board = await docClient.query(params).promise();
+for (let note in board.Items){
+    if (board.Items[note].board_notes[note].note_id === note_id){
+
+        let params1 = {
+            TableName: table,
+            KeyConditionExpression: "BoardId = :board_id",
+            FilterExpression: "contains(board_notes, :note)",
+            ExpressionAttributeValues: {
+                ":board_id": board_id,
+                ":note": board.Items[note].board_notes[note]
+            }
+        }
+        try{
+            await docClient.query(params1).promise(); 
+            res.send(JSON.stringify(board.Items[note].board_notes[note]))
+        } catch(error) {
+            res.send(JSON.stringify(error))
+        }
+    }
+}
 });
 
 app.use("/", router);
