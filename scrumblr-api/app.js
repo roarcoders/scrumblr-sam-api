@@ -2,14 +2,14 @@
 const express = require("express");
 const app = express();
 const router = express.Router();
-//const port = 3000; // for local testing
+//const port = 3000; // Uncomment for testing locally
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-//uncomment for local testing
+//uncomment for testing locally
 // AWS.config.update({
 //   region: "ap-southeast-2",
 //   endpoint: "http://localhost:8000",
@@ -19,7 +19,11 @@ router.use(express.urlencoded({ extended: true }));
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 
-const table = "scrumblr-api-1-ScrumblrDB-YNZ5VH51RIPV"; //"DevCop";
+// Replace with the name of your local Dynanmodb table name
+const table = "scrumblr-api-1-ScrumblrDB-YNZ5VH51RIPV"; 
+
+let board_id, note_id;
+
 
 
 //List all boards in memory(array)
@@ -40,7 +44,6 @@ router.get("/board", async (req, res) => {
 
 //Get a particular board
 router.get("/board/:boardId", async (req, res) => {
-  let board_id;
   if (!("boardId" in req.params)) {
     board_id = "";
   } else {
@@ -96,9 +99,7 @@ router.post("/board", async (req, res) => {
 
 //Delete a specific board
 router.delete("/board/:boardId", async (req, res) => {
-  let board_id;
-
-  if (!("boardId" in req.params)) {
+ if (!("boardId" in req.params)) {
     board_id = "";
   } else {
     board_id = req.params.boardId;
@@ -131,7 +132,6 @@ router.delete("/board/:boardId", async (req, res) => {
 
 //Create a note for a specified board
 router.post("/board/:boardId/note", async (req, res) => {
-  let board_id;
   if (!("boardId" in req.params)) {
     board_id = "";
   } else {
@@ -175,9 +175,6 @@ router.post("/board/:boardId/note", async (req, res) => {
 
 // Delete a particular note from a particular board
 router.delete("/board/:boardId/note/:noteId", async (req, res) => {
-  let board_id;
-  let note_id;
-
   if (!("boardId" in req.params) && "noteId" in req.params) {
     board_id = "";
     note_id = "";
@@ -208,9 +205,6 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
 
 // Update a specific note
 router.patch("/board/:boardId/note/:noteId", async (req, res) => {
-  let note_id;
-  let board_id;
-
   if (!("boardId" in req.params) && "noteId" in req.params) {
     note_id = "";
     board_id = "";
@@ -261,9 +255,6 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 // Get a specific note
 
 router.get("/board/:boardId/note/:noteId", async (req, res) => {
-  let note_id;
-  let board_id;
-
   if (!("boardId" in req.params) && "noteId" in req.params) {
     note_id = " ";
     board_id = " ";
