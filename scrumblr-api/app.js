@@ -5,9 +5,16 @@ const router = express.Router();
 //const port = 3000; // Uncomment for testing locally
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
+const bodyParser = require('body-parser')
+const cors = require('cors')
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
+
+
+router.use(cors());
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: true }));
 
 //uncomment for testing locally
 // AWS.config.update({
@@ -17,10 +24,18 @@ router.use(express.urlencoded({ extended: true }));
 
 //let DevCop = [];
 
+// router.use((req, res, next) => {
+//   res.append('Access-Control-Allow-Origin', ['*']);
+//   res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+//   res.append('Access-Control-Allow-Headers', 'Content-Type');
+//   next();
+// });
+
+
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-YNZ5VH51RIPV"; 
+const table = "scrumblr-api-1-ScrumblrDB-10AZCBWJQYD6L"; 
 
 let board_id, note_id;
 
@@ -78,11 +93,14 @@ router.get("/board/:boardId", async (req, res) => {
 //Create a new board
 router.post("/board", async (req, res) => {
   const boardId = uuidv4();
+  let board_name = res.body.BoardName;
+  console.log(board_name);
 
   let params = {
     TableName: table,
     Item: {
       BoardId: boardId,
+      BoardName: board_name,
       board_notes: [],
     },
   };
@@ -91,6 +109,7 @@ router.post("/board", async (req, res) => {
 
   try {
     data = await docClient.put(params).promise();
+    res.set('Content-Type','application/json')
     res.send(data.items);
   } catch (error) {
     res.send(JSON.stringify(error));
