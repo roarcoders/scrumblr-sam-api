@@ -93,8 +93,9 @@ router.get("/board/:boardId", async (req, res) => {
 //Create a new board
 router.post("/board", async (req, res) => {
   const boardId = uuidv4();
-  let board_name = req.body;
-  console.log(req.body);
+  let board_name = JSON.stringify(req.body.BoardName.toString());
+  console.log("board_name -> " + board_name)
+  console.log("JSON.stringify(req.body) -> " + JSON.stringify(req.body))
 
   let params = {
     TableName: table,
