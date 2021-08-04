@@ -89,17 +89,12 @@ router.get("/board/:boardId", async (req, res) => {
     }
   }
 });
-w
+
 //Create a new board
 router.post("/board", async (req, res) => {
   const boardId = uuidv4();
-  let board_name = JSON.stringify(req.body);
-  console.log("JSON.stringify(req.body.BoardName) -> " + JSON.stringify(req.body.BoardName));
-
-  console.log("JSON.stringify(req.body) -> " + JSON.stringify(req.body));
+  let board_name = req.body.BoardName;
   
-
-
   let params = {
     TableName: table,
     Item: {
