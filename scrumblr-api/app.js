@@ -22,15 +22,6 @@ router.use(bodyParser.urlencoded({ extended: true }));
 //   endpoint: "http://localhost:8000",
 // });
 
-//let DevCop = [];
-
-// router.use((req, res, next) => {
-//   res.append('Access-Control-Allow-Origin', ['*']);
-//   res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-//   res.append('Access-Control-Allow-Headers', 'Content-Type');
-//   next();
-// });
-
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 
@@ -38,8 +29,6 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 const table = "scrumblr-api-1-ScrumblrDB-10AZCBWJQYD6L"; 
 
 let board_id, note_id;
-
-
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
@@ -58,30 +47,37 @@ router.get("/board", async (req, res) => {
 });
 
 //Get a particular board
-router.get("/board/:boardId", async (req, res) => {
-  if (!("boardId" in req.params)) {
-    board_id = "";
-  } else {
-    board_id = req.params.boardId;
-  }
+router.get("/board/:BoardName", async (req, res) => {
 
-  let params = {
-    TableName: table,
-  };
+let board_name
+if (!('BoardName' in req.params)){
+    board_name = ""
+}
+else {
+    board_name = req.params.BoardName
+}
 
-  const tableRows = await docClient.scan(params).promise();
-  let data;
+let params = {
+    TableName: table
+}
 
-  for (let row in tableRows.Items) {
-    if (tableRows.Items[row].BoardId === board_id) {
+const tableRows = await docClient.scan(params).promise();
+let data
+
+for (let row in tableRows.Items) {
+  if (tableRows.Items[row].BoardName === board_name) {
+      board_id = tableRows.Items[row].BoardId
+      console.log(board_id)
       let params1 = {
         TableName: table,
-        Key: {
-          BoardId: board_id,
+        KeyConditionExpression: "BoardId = :boardId",
+        ExpressionAttributeValues: {
+          ":boardId": board_id,
         },
       };
+
       try {
-        data = await docClient.get(params1).promise();
+        data = await docClient.query(params1).promise();
         res.send(data);
       } catch (error) {
         res.send(JSON.stringify(error));
