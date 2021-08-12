@@ -10,8 +10,6 @@ const cors = require('cors')
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
-
-
 router.use(cors());
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -26,9 +24,9 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-10AZCBWJQYD6L"; 
+const table = "scrumblr-api-1-ScrumblrDB-131OTT53YY2F6"; 
 
-let board_id, note_id;
+let board_id, note_id, board_name;
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
@@ -49,7 +47,6 @@ router.get("/board", async (req, res) => {
 //Get a particular board
 router.get("/board/:BoardName", async (req, res) => {
 
-let board_name
 if (!('BoardName' in req.params)){
     board_name = ""
 }
@@ -67,7 +64,6 @@ let data
 for (let row in tableRows.Items) {
   if (tableRows.Items[row].BoardName === board_name) {
       board_id = tableRows.Items[row].BoardId
-      console.log(board_id)
       let params1 = {
         TableName: table,
         KeyConditionExpression: "BoardId = :boardId",
@@ -112,11 +108,12 @@ router.post("/board", async (req, res) => {
 });
 
 //Delete a specific board
-router.delete("/board/:boardId", async (req, res) => {
- if (!("boardId" in req.params)) {
-    board_id = "";
+router.delete("/board/:BoardName", async (req, res) => {
+
+ if (!("BoardName" in req.params)) {
+    board_name = "";
   } else {
-    board_id = req.params.boardId;
+    board_name = req.params.BoardName;
   }
 
   let params = {
@@ -127,13 +124,15 @@ router.delete("/board/:boardId", async (req, res) => {
   let data;
 
   for (let board in boards.Items) {
-    if (boards.Items[board].BoardId === board_id) {
+    if (boards.Items[board].BoardName === board_name) {
+      board_id = boards.Items[board].BoardId
       let params1 = {
         TableName: table,
         Key: {
           BoardId: board_id,
         },
       };
+
       try {
         data = await docClient.delete(params1).promise();
         res.send("DELETED BOARD" + data);
