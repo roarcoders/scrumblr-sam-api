@@ -303,8 +303,8 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
 app.use("/", router);
 
 // uncomment for local testing
-// app.listen(port, () => {
-//   console.log(`App listening at http://localhost:${port}`);
-// });
+app.listen(port, () => {
+  console.log(`App listening at http://localhost:${port}`);
+});
 
 module.exports = app;
