@@ -26,7 +26,7 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 // Replace with the name of your local Dynanmodb table name
 const table = "scrumblr-api-1-ScrumblrDB-131OTT53YY2F6"; 
 
-let board_id, note_id, board_name;
+let board_id, note_id
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
@@ -37,21 +37,24 @@ router.get("/board", async (req, res) => {
   let data;
 
   try {
+    
     data = await docClient.scan(params).promise();
+
   } catch (error) {
     res.send(JSON.stringify(error));
   }
+  res.status(200);
   res.send(JSON.stringify(data));
 });
 
 //Get a particular board
-router.get("/board/:BoardName", async (req, res) => {
+router.get("/board/:boardId", async (req, res) => {
 
-if (!('BoardName' in req.params)){
-    board_name = ""
+if (!('boardId' in req.params)){
+    board_id = ""
 }
 else {
-    board_name = req.params.BoardName
+    board_id = req.params.boardId
 }
 
 let params = {
@@ -61,24 +64,11 @@ let params = {
 const tableRows = await docClient.scan(params).promise();
 let data
 
-for (let row in tableRows.Items) {
-  if (tableRows.Items[row].BoardName === board_name) {
-      board_id = tableRows.Items[row].BoardId
-      let params1 = {
-        TableName: table,
-        KeyConditionExpression: "BoardId = :boardId",
-        ExpressionAttributeValues: {
-          ":boardId": board_id,
-        },
-      };
-
-      try {
-        data = await docClient.query(params1).promise();
-        res.send(data);
-      } catch (error) {
-        res.send(JSON.stringify(error));
-      }
-    }
+let board = tableRows.Items.find(board => wboard.BoardId === board_id)
+  try {
+    res.send(board);
+  } catch (error) {
+    res.send(JSON.stringify(error));
   }
 });
 
@@ -101,7 +91,7 @@ router.post("/board", async (req, res) => {
   try {
     data = await docClient.put(params).promise();
     res.set('Content-Type','application/json')
-    res.send(data.items);
+    res.send(JSON.stringify(boardId))
   } catch (error) {
     res.send(JSON.stringify(error));
   }
@@ -303,8 +293,8 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
 app.use("/", router);
 
 // uncomment for local testing
-app.listen(port, () => {
-  console.log(`App listening at http://localhost:${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`App listening at http://localhost:${port}`);
+// });
 
 module.exports = app;
