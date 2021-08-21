@@ -64,7 +64,7 @@ let params = {
 const tableRows = await docClient.scan(params).promise();
 let data
 
-let board = tableRows.Items.find(board => wboard.BoardId === board_id)
+let board = tableRows.Items.find(board => board.BoardId === board_id)
   try {
     res.send(board);
   } catch (error) {
