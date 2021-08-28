@@ -24,7 +24,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-131OTT53YY2F6"; 
+const table = "scrumblr-api-1-ScrumblrDB-1MVOKMASEC4G";
 
 let board_id, note_id
 
@@ -91,6 +91,7 @@ router.post("/board", async (req, res) => {
   try {
     data = await docClient.put(params).promise();
     res.set('Content-Type','application/json')
+    res.status(200);
     res.send(JSON.stringify(boardId))
   } catch (error) {
     res.send(JSON.stringify(error));
