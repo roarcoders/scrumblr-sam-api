@@ -10,7 +10,12 @@ const cors = require('cors')
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
-router.use(cors());
+let corsOptions = {
+    origin: '*',
+    optionsSuccessStatus: 200,
+  }
+app.use(cors(corsOptions));
+app.use(express.json())
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 
@@ -19,6 +24,8 @@ router.use(bodyParser.urlencoded({ extended: true }));
 //   region: "ap-southeast-2",
 //   endpoint: "http://localhost:8000",
 // });
+
+
 
 
 const docClient = new AWS.DynamoDB.DocumentClient();
@@ -85,12 +92,16 @@ router.post("/board", async (req, res) => {
       board_notes: [],
     },
   };
-
+  
   let data;
 
   try {
     data = await docClient.put(params).promise();
     res.set('Content-Type','application/json')
+    res.set('Access-Control-Allow-Origin','*')// / Required for CORS support to work
+    res.set('Access-Control-Allow-Credentials', true) 
+    
+    //set cors cofiguration here too
     res.status(200);
     res.send(JSON.stringify(boardId))
   } catch (error) {
