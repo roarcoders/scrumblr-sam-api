@@ -8,6 +8,11 @@ const AWS = require("aws-sdk");
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
+var corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 router.use(cors());
@@ -24,7 +29,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-1MVOKMASEC4G";
+const table = "scrumblr-api-1-ScrumblrDB-1LHEXHA5ZHG9T";
 
 let board_id, note_id
 
@@ -72,8 +77,11 @@ let board = tableRows.Items.find(board => board.BoardId === board_id)
   }
 });
 
+router.options('*', cors())
+
+
 //Create a new board
-router.post("/board", async (req, res) => {
+router.post("/board",cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   let board_name = req.body.BoardName;
   
@@ -90,9 +98,20 @@ router.post("/board", async (req, res) => {
 
   try {
     data = await docClient.put(params).promise();
-    res.set('Content-Type','application/json')
-    res.status(200);
-    res.send(JSON.stringify(boardId))
+    //  res = {
+    //   statusCode : 200 , 
+    //   headers: {
+    //     "Access-Control-Allow-Headers" : "application/json",
+    //     "Access-Control-Allow-Origin": "*",
+    //     "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+    // },
+    // body: JSON.stringify(boardId)
+    // }
+    //res.set('Content-Type','application/json')
+    //res.status(200);
+    //res.statusCode = 200;
+    res.send(boardId)
+    //res.send(JSON.stringify(boardId))
   } catch (error) {
     res.send(JSON.stringify(error));
   }
