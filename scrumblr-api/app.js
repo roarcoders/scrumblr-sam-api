@@ -26,7 +26,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-10AZCBWJQYD6L"; 
+const table = "scrumblr-api-1-ScrumblrDB-1MVOKMASEC4G"; 
 
 let board_id, note_id;
 
@@ -47,14 +47,14 @@ router.get("/board", async (req, res) => {
 });
 
 //Get a particular board
-router.get("/board/:BoardName", async (req, res) => {
+router.get("/board/:BoardId", async (req, res) => {
 
-let board_name
-if (!('BoardName' in req.params)){
-    board_name = ""
+let board_id
+if (!('BoardId' in req.params)){
+    board_id = ""
 }
 else {
-    board_name = req.params.BoardName
+    board_id = req.params.BoardId
 }
 
 let params = {
@@ -65,9 +65,7 @@ const tableRows = await docClient.scan(params).promise();
 let data
 
 for (let row in tableRows.Items) {
-  if (tableRows.Items[row].BoardName === board_name) {
-      board_id = tableRows.Items[row].BoardId
-      console.log(board_id)
+  if (tableRows.Items[row].BoardId === board_id) {
       let params1 = {
         TableName: table,
         KeyConditionExpression: "BoardId = :boardId",
@@ -100,23 +98,27 @@ router.post("/board", async (req, res) => {
     },
   };
 
+  let boardIdObj = {
+    boardID: boardId  
+  }
+
   let data;
 
   try {
     data = await docClient.put(params).promise();
     res.set('Content-Type','application/json')
-    res.send(data.items);
+    res.send(boardIdObj)
   } catch (error) {
     res.send(JSON.stringify(error));
   }
 });
 
 //Delete a specific board
-router.delete("/board/:boardId", async (req, res) => {
- if (!("boardId" in req.params)) {
+router.delete("/board/:BoardId", async (req, res) => {
+ if (!("BoardId" in req.params)) {
     board_id = "";
   } else {
-    board_id = req.params.boardId;
+    board_id = req.params.BoardId;
   }
 
   let params = {
@@ -124,32 +126,41 @@ router.delete("/board/:boardId", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
-  let data;
+  let data, params1;
+
+  let isBoardPresent = false
 
   for (let board in boards.Items) {
     if (boards.Items[board].BoardId === board_id) {
-      let params1 = {
+      isBoardPresent = true
+      params1 = {
         TableName: table,
         Key: {
           BoardId: board_id,
         },
       };
-      try {
-        data = await docClient.delete(params1).promise();
-        res.send("DELETED BOARD" + data);
-      } catch (error) {
-        res.send(JSON.stringify("Error occured while deleting -> " + error));
+    }
+    try {
+      if (isBoardPresent) {
+      data = await docClient.delete(params1).promise();
+      res.send("DELETED BOARD" + data);
       }
+      else{
+        res.status(404);
+        res.send("Board not found")
+      }
+    } catch (error) {
+      res.send(JSON.stringify("Error occured while deleting -> " + error));
     }
   }
 });
 
 //Create a note for a specified board
-router.post("/board/:boardId/note", async (req, res) => {
-  if (!("boardId" in req.params)) {
+router.post("/board/:BoardId/note", async (req, res) => {
+  if (!("BoardId" in req.params)) {
     board_id = "";
   } else {
-    board_id = req.params.boardId;
+    board_id = req.params.BoardId;
   }
 
   const textForNote = req.body.singleNote;
