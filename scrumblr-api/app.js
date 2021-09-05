@@ -98,26 +98,11 @@ router.post("/board",cors(corsOptions), async (req, res) => {
 
   try {
     data = await docClient.put(params).promise();
-    //  res = {
-    //   statusCode : 200 , 
-    //   headers: {
-    //     "Access-Control-Allow-Headers" : "application/json",
-    //     "Access-Control-Allow-Origin": "*",
-    //     "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-    // },
-    // body: JSON.stringify(boardId)
-    // }
-    //res.set('Content-Type','application/json')
-    //res.status(200);
-    //res.statusCode = 200;
     let boardIdObj = {
       boardID : boardId
     }
-    // console.log("JSON parse: "+ JSON.parse(boardIdObj))
-    // console.log("BoardId:"+boardId)
 
     res.send(boardIdObj)
-    //res.send(JSON.stringify(boardId))
   } catch (error) {
     res.send(JSON.stringify(error));
   }
