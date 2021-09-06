@@ -93,43 +93,27 @@ router.post("/board",cors(corsOptions), async (req, res) => {
       board_notes: [],
     },
   };
-
   let data;
-
   try {
     data = await docClient.put(params).promise();
-    //  res = {
-    //   statusCode : 200 , 
-    //   headers: {
-    //     "Access-Control-Allow-Headers" : "application/json",
-    //     "Access-Control-Allow-Origin": "*",
-    //     "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-    // },
-    // body: JSON.stringify(boardId)
-    // }
-    //res.set('Content-Type','application/json')
-    //res.status(200);
-    //res.statusCode = 200;
     let boardIdObj = {
       boardID : boardId
     }
-    // console.log("JSON parse: "+ JSON.parse(boardIdObj))
-    // console.log("BoardId:"+boardId)
 
     res.send(boardIdObj)
-    //res.send(JSON.stringify(boardId))
+ 
   } catch (error) {
     res.send(JSON.stringify(error));
   }
 });
 
 //Delete a specific board
-router.delete("/board/:BoardName", async (req, res) => {
+router.delete("/board/:BoardId", async (req, res) => {
 
- if (!("BoardName" in req.params)) {
-    board_name = "";
+ if (!("BoardId" in req.params)) {
+    board_id = "";
   } else {
-    board_name = req.params.BoardName;
+    board_id = req.params.BoardId;
   }
 
   let params = {
@@ -137,26 +121,40 @@ router.delete("/board/:BoardName", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
-  let data;
-
+  let data, params1;
+  let isBoardPresent = false;
   for (let board in boards.Items) {
-    if (boards.Items[board].BoardName === board_name) {
-      board_id = boards.Items[board].BoardId
-      let params1 = {
+    if (boards.Items[board].BoardId === board_id) {
+  isBoardPresent = true;
+
+      params1 = {
         TableName: table,
         Key: {
           BoardId: board_id,
         },
       };
 
-      try {
-        data = await docClient.delete(params1).promise();
-        res.send("DELETED BOARD" + data);
-      } catch (error) {
-        res.send(JSON.stringify("Error occured while deleting -> " + error));
-      }
+     
     }
   }
+
+  try {
+    if(isBoardPresent)
+    {
+      data = await docClient.delete(params1).promise();
+      res.status(200);
+      res.send("DELETED BOARD");
+    }
+    else
+    {
+      res.status(404);
+      res.send("Board not found");
+    }
+  }
+   catch (error) {
+    res.send(JSON.stringify("Error occured while deleting -> " + error));
+  }
+
 });
 
 //Create a note for a specified board
