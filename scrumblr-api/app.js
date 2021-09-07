@@ -6,7 +6,8 @@ const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 const bodyParser = require('body-parser')
-const cors = require('cors')
+const cors = require('cors');
+const { IoTThingsGraph } = require("aws-sdk");
 
 var corsOptions = {
   origin: '*',
@@ -221,11 +222,15 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
   let board = await docClient.query(params).promise();
   let itemsFirstIndex = board.Items.find(Boolean);
 
+
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
       itemsFirstIndex.board_notes.splice(note, 1);
+      break;
+
     }
   }
+  board.Items.board_notes = itemsFirstIndex.board_notes.slice(0);
   res.send(JSON.stringify(itemsFirstIndex));
 
 });
