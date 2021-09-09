@@ -6,8 +6,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 const bodyParser = require('body-parser')
-const cors = require('cors');
-const { IoTThingsGraph } = require("aws-sdk");
+const cors = require('cors')
 
 var corsOptions = {
   origin: '*',
@@ -30,7 +29,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-1LHEXHA5ZHG9T";
+const table = "scrumblr-api-1-ScrumblrDB-1MVOKMASEC4G"; 
 
 let board_id, note_id
 
@@ -54,13 +53,14 @@ router.get("/board", async (req, res) => {
 });
 
 //Get a particular board
-router.get("/board/:boardId", async (req, res) => {
+router.get("/board/:BoardId", async (req, res) => {
 
-if (!('boardId' in req.params)){
+let board_id
+if (!('BoardId' in req.params)){
     board_id = ""
 }
 else {
-    board_id = req.params.boardId
+    board_id = req.params.BoardId
 }
 
 let params = {
@@ -94,6 +94,7 @@ router.post("/board",cors(corsOptions), async (req, res) => {
       board_notes: [],
     },
   };
+
   let data;
   try {
     data = await docClient.put(params).promise();
@@ -110,7 +111,6 @@ router.post("/board",cors(corsOptions), async (req, res) => {
 
 //Delete a specific board
 router.delete("/board/:BoardId", async (req, res) => {
-
  if (!("BoardId" in req.params)) {
     board_id = "";
   } else {
@@ -159,11 +159,11 @@ router.delete("/board/:BoardId", async (req, res) => {
 });
 
 //Create a note for a specified board
-router.post("/board/:boardId/note", async (req, res) => {
-  if (!("boardId" in req.params)) {
+router.post("/board/:BoardId/note", async (req, res) => {
+  if (!("BoardId" in req.params)) {
     board_id = "";
   } else {
-    board_id = req.params.boardId;
+    board_id = req.params.BoardId;
   }
 
   const textForNote = req.body.singleNote;
@@ -221,17 +221,26 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
 
   let board = await docClient.query(params).promise();
   let itemsFirstIndex = board.Items.find(Boolean);
-
-
+  let params1;
+  
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
-      itemsFirstIndex.board_notes.splice(note, 1);
-      break;
+        itemsFirstIndex.board_notes.splice(note, 1);
 
-    }
+      params1= {
+        TableName: table,
+        Key: {
+          "BoardId": board_id,
+        },
+        UpdateExpression: "SET board_notes = :board_notes_new_array",
+        ExpressionAttributeValues: {
+          ":board_notes_new_array": itemsFirstIndex.board_notes,
+        },
+      };
+    } 
   }
-  board.Items.board_notes = itemsFirstIndex.board_notes.slice(0);
-  res.send(JSON.stringify(itemsFirstIndex));
+      await docClient.update(params1).promise();
+      res.send(JSON.stringify("Note deleted Successfully"));
 
 });
 
