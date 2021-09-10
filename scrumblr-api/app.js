@@ -213,6 +213,9 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
 
   let params = {
     TableName: table,
+    Key: {
+      "BoardId": board_id,
+    },
     KeyConditionExpression: "BoardId = :boardId",
     ExpressionAttributeValues: {
       ":boardId": board_id,
@@ -222,7 +225,7 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
   let board = await docClient.query(params).promise();
   let itemsFirstIndex = board.Items.find(Boolean);
   let params1;
-  
+
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
         itemsFirstIndex.board_notes.splice(note, 1);
@@ -297,8 +300,8 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 
 router.get("/board/:boardId/note/:noteId", async (req, res) => {
   if (!("boardId" in req.params) && "noteId" in req.params) {
-    note_id = " ";
-    board_id = " ";
+    note_id = "";
+    board_id = "";
   } else {
     note_id = req.params.noteId;
     board_id = req.params.boardId;
