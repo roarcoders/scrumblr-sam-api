@@ -109,6 +109,33 @@ router.post("/board",cors(corsOptions), async (req, res) => {
   }
 });
 
+router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
+  if (!('BoardId') in req.params){
+    board_id = ""
+  }
+  else {
+    board_id = req.params.BoardId
+  }
+
+  let params = {
+    TableName: table,
+    Key:{
+      BoardId: board_id
+    },
+    UpdateExpression: "SET BoardName = :boardName",
+    ExpressionAttributeValues: {
+      ":boardName": req.body.BoardName
+    }
+  }
+
+  await docClient.update(params).promise();
+  res.status(200)
+  res.send()
+})
+
+
+
+
 //Delete a specific board
 router.delete("/board/:BoardId", async (req, res) => {
  if (!("BoardId" in req.params)) {
