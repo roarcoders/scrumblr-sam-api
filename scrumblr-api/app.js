@@ -42,9 +42,7 @@ router.get("/board", async (req, res) => {
   let data;
 
   try {
-    
     data = await docClient.scan(params).promise();
-
   } catch (error) {
     res.send(JSON.stringify(error));
   }
@@ -68,9 +66,9 @@ let params = {
 }
 
 const tableRows = await docClient.scan(params).promise();
-let data
 
 let board = tableRows.Items.find(board => board.BoardId === board_id)
+
   try {
     res.send(board);
   } catch (error) {
@@ -101,14 +99,13 @@ router.post("/board",cors(corsOptions), async (req, res) => {
     let boardIdObj = {
       boardID : boardId
     }
-
     res.send(boardIdObj)
- 
   } catch (error) {
     res.send(JSON.stringify(error));
   }
 });
 
+//Update the board name
 router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
   if (!('BoardId') in req.params){
     board_id = ""
@@ -127,14 +124,15 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
       ":boardName": req.body.BoardName
     }
   }
+  try{
+    await docClient.update(params).promise();
+    res.status(200)
+    res.send()
+  } catch (error){
+    res.send(JSON.stringify(error))
+  }
 
-  await docClient.update(params).promise();
-  res.status(200)
-  res.send()
 })
-
-
-
 
 //Delete a specific board
 router.delete("/board/:BoardId", async (req, res) => {
@@ -153,34 +151,29 @@ router.delete("/board/:BoardId", async (req, res) => {
   let isBoardPresent = false;
   for (let board in boards.Items) {
     if (boards.Items[board].BoardId === board_id) {
-  isBoardPresent = true;
-
-      params1 = {
-        TableName: table,
-        Key: {
-          BoardId: board_id,
-        },
-      };
-
-     
+        isBoardPresent = true;
+        params1 = {
+          TableName: table,
+          Key: {
+            BoardId: board_id,
+          },
+        };
     }
   }
 
   try {
-    if(isBoardPresent)
-    {
+    if(isBoardPresent) {
       data = await docClient.delete(params1).promise();
       res.status(200);
-      res.send("DELETED BOARD");
+      res.send();
     }
-    else
-    {
+    else{
       res.status(404);
-      res.send("Board not found");
+      res.send();
     }
   }
    catch (error) {
-    res.send(JSON.stringify("Error occured while deleting -> " + error));
+    res.send(JSON.stringify(error));
   }
 
 });
@@ -197,7 +190,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
   const singleNote = {
     note_id: uuidv4(),
     topic: textForNote,
-    dateCrated: Date.now(),
+    dateCreated: Date.now(),
   };
 
   let params = {
@@ -220,7 +213,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
 
       try {
         await docClient.update(updateBoard).promise();
-        res.send(JSON.stringify("Note Inserted Successfully"));
+        res.send();
       } catch (error) {
         res.send(JSON.stringify(error));
       }
@@ -269,9 +262,14 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
       };
     } 
   }
-      await docClient.update(params1).promise();
-      res.send(JSON.stringify("Note deleted Successfully"));
-
+  try{
+    await docClient.update(params1).promise();
+    res.send();
+  } catch {
+    res.send(JSON.stringify(err))
+  }
+      
+      
 });
 
 // Update a specific note
@@ -304,10 +302,8 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
         Key: {
           "BoardId": board_id,
         },
-        // KeyConditionExpression : "BoardId = :board_id",
         UpdateExpression: "SET board_notes[" + note + "].topic = :noteText",
         ExpressionAttributeValues: {
-          //":board_id": board_id,
           ":noteText": textForNote,
         },
       };
@@ -317,9 +313,9 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 
   try {
     await docClient.update(updateNote).promise();
-    res.send(JSON.stringify(board.Items.find(Boolean).board_notes[note]));
+    res.send();
   } catch (error) {
-    res.send(JSON.stringify("An error occurred " + error));
+    res.send(error);
   }
 });
 
@@ -352,7 +348,6 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
         topic: itemsFirstIndex.board_notes[note].topic,
         dateCrated: itemsFirstIndex.board_notes[note].dateCrated,
       };
-
       res.send(JSON.stringify(singleNote));
     }
   }
