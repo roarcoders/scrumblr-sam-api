@@ -56,6 +56,8 @@ router.get("/board/:BoardId", async (req, res) => {
 let board_id
 if (!('BoardId' in req.params)){
     board_id = ""
+    res.status(404);
+    res.send(JSON.stringify('BoardId not found in database'));
 }
 else {
     board_id = req.params.BoardId
