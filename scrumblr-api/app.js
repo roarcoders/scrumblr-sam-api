@@ -56,11 +56,16 @@ router.get("/board/:BoardId", async (req, res) => {
 let board_id
 if (!('BoardId' in req.params)){
     board_id = ""
-    res.status(404);
-    res.send(JSON.stringify('BoardId not found in database'));
 }
 else {
     board_id = req.params.BoardId
+}
+
+const regex = new RegExp('^[a-zA-Z0-9-]+$');
+
+if (!(regex.test(board_id)) || board_id.length === 32){
+  res.status(404)
+  res.send(JSON.stringify("BoardId isn't valid"))
 }
 
 let params = {
