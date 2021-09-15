@@ -62,10 +62,9 @@ else {
 }
 
 const regex = new RegExp('^[a-zA-Z0-9-]+$');
-
-if (!(regex.test(board_id)) || board_id.length === 32){
+if (!(regex.test(board_id) && board_id.length === 36)){
   res.status(404)
-  res.send(JSON.stringify("BoardId isn't valid"))
+  res.send(JSON.stringify("BoardId is invalid"))
 }
 
 let params = {
