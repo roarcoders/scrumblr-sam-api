@@ -29,9 +29,30 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-1LHEXHA5ZHG9T"; 
+const table = "scrumblr-api-1-ScrumblrDB-1MVOKMASEC4G"; 
 
 let board_id, note_id
+
+const isEmpty = (obj) => {
+  switch (JSON.stringify(obj) == JSON.stringify({})) {
+    case true:
+      return true;
+    case false:
+      return false;
+    default:
+      return false;
+  }
+}
+
+const errorReturn = (responseStatus, message,response) => {
+  response.status (responseStatus)
+  response.send(JSON.stringify(message))
+}
+
+const isBoardIdAlphaNumeric = (test_board_id) => {
+  const regex = new RegExp('^[a-zA-Z0-9-]+$');
+  return (regex.test(test_board_id) && test_board_id.length === 36)
+}
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
@@ -50,22 +71,6 @@ router.get("/board", async (req, res) => {
   res.send(JSON.stringify(data));
 });
 
-const errorReturn = (responseStatus, message,response) => {
-
-      response.status (responseStatus)
-      response.send(JSON.stringify(message))
-  
-}
-
-const isBoardIdAlphaNumeric = (test_board_id) =>
-{
-  const regex = new RegExp('^[a-zA-Z0-9-]+$');
-  
-  return !(regex.test(test_board_id) && test_board_id.length === 36)
-
-}
-
-
 //Get a particular board
 router.get("/board/:BoardId", async (req, res) => {
 
@@ -74,8 +79,6 @@ if (!('BoardId' in req.params)){
     board_id = ""
     errorReturn(404, "BoardId is not present in parameters", res)
     return;
-    
-
 }
 else {
     board_id = req.params.BoardId
@@ -88,7 +91,6 @@ switch(isBoardIdAlphaNumeric(board_id))
     return;
   case false:
   default:
-
 }
 
 
@@ -113,9 +115,7 @@ if (isEmpty(board))
   }
 });
 
-function isEmpty(obj) {
-  return Object.keys(obj).length === 0;
-}
+
 
 router.options('*', cors())
 
@@ -164,13 +164,13 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
   switch(isBoardIdAlphaNumeric(board_id))
   {
     case true : 
-    errorReturn(404, "BoardId isn't valid", res)
-    return;
+      errorReturn(404, "BoardId isn't valid", res)
+      return;
     case false:
     default:
   }
 
-  switch(typeof req.body.BoardName === 'string')
+  switch(typeof req.body.BoardName === 'string') // works
   {
     case false:
       errorReturn(404, "Board Name is not valid", res)
@@ -208,7 +208,8 @@ router.delete("/board/:BoardId", async (req, res) => {
   } else {
     board_id = req.params.BoardId;
   }
-  switch(isBoardIdAlphaNumeric(board_id))
+
+  switch(isBoardIdAlphaNumeric(board_id)) // works
   {
     case false:
       errorReturn(404, "Board Id is not valid", res)
@@ -222,13 +223,14 @@ router.delete("/board/:BoardId", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
-  switch(isEmpty(boards))
+
+  switch(boards.Items.length === 0)
   {
     case true:
       errorReturn(404, "No Boards found in Database", res)
       return;
     case false :
-      default:
+    default:
 
   }
   let params1;
@@ -251,7 +253,7 @@ router.delete("/board/:BoardId", async (req, res) => {
       res.status(200);
       res.send();
     }
-    else{
+    else {
       errorReturn(404, "Board Not Found", res)
       return;
     }
@@ -259,7 +261,6 @@ router.delete("/board/:BoardId", async (req, res) => {
    catch (error) {
     res.send(JSON.stringify(error));
   }
-
 });
 
 //Create a note for a specified board
