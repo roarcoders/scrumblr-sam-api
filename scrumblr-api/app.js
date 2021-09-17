@@ -86,13 +86,12 @@ else {
 
 switch(isBoardIdAlphaNumeric(board_id))
 {
-  case true:
-    errorReturn(404, "BoardId is not valid", res)
-    return;
   case false:
+    errorReturn(400, "BoardId is not valid", res)
+    return;
+  case true:
   default:
 }
-
 
 let params = {
     TableName: table
@@ -175,8 +174,8 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
     case false:
       errorReturn(404, "Board Name is not valid", res)
       return;
-      case true:
-        default:
+    case true:
+    default:
   }
 
   let params = {
@@ -196,7 +195,6 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
   } catch (error){
     res.send(JSON.stringify(error))
   }
-
 })
 
 //Delete a specific board
@@ -227,7 +225,7 @@ router.delete("/board/:BoardId", async (req, res) => {
   switch(boards.Items.length === 0)
   {
     case true:
-      errorReturn(404, "No Boards found in Database", res)
+      errorReturn(404, "No Boards found in Database", res) //works
       return;
     case false :
     default:
@@ -264,47 +262,57 @@ router.delete("/board/:BoardId", async (req, res) => {
 });
 
 //Create a note for a specified board
-// router.post("/board/:BoardId/note", async (req, res) => {
-//   if (!("BoardId" in req.params)) {
-//     board_id = "";
-//   } else {
-//     board_id = req.params.BoardId;
-//   }
+router.post("/board/:BoardId/note", async (req, res) => {
 
-//   const textForNote = req.body.singleNote;
-//   const singleNote = {
-//     note_id: uuidv4(),
-//     topic: textForNote,
-//     dateCreated: Date.now(),
-//   };
+  if (!("BoardId" in req.params)) {
+    board_id = "";
+    errorReturn(404, "Board Id is not present in the parameters", res)
+  } else {
+    board_id = req.params.BoardId;
+  }
 
-//   let params = {
-//     TableName: table,
-//   };
+  switch(isBoardIdAlphaNumeric(board_id)) {
+    case false:
+     errorReturn(400, "Board Id is not valid", res)
+     return;
+    case true:
+    default:
+  }
 
-//   let boards = await docClient.scan(params).promise();
-//   for (let board in boards.Items) {
-//     if (boards.Items[board].BoardId === board_id) {
-//       let updateBoard = {
-//         TableName: table,
-//         Key: {
-//           "BoardId": board_id,
-//         },
-//         UpdateExpression: "SET board_notes = list_append(board_notes,:note)",
-//         ExpressionAttributeValues: {
-//           ":note": [singleNote],
-//         },
-//       };
+  const textForNote = req.body.singleNote;
+  const singleNote = {
+    note_id: uuidv4(),
+    topic: textForNote,
+    dateCreated: Date.now(),
+  };
 
-//       try {
-//         await docClient.update(updateBoard).promise();
-//         res.send();
-//       } catch (error) {
-//         res.send(JSON.stringify(error));
-//       }
-//     }
-//   }
-// });
+  let params = {
+    TableName: table,
+  };
+
+  let boards = await docClient.scan(params).promise();
+  for (let board in boards.Items) {
+    if (boards.Items[board].BoardId === board_id) {
+      let updateBoard = {
+        TableName: table,
+        Key: {
+          "BoardId": board_id,
+        },
+        UpdateExpression: "SET board_notes = list_append(board_notes,:note)",
+        ExpressionAttributeValues: {
+          ":note": [singleNote],
+        },
+      };
+
+      try {
+        await docClient.update(updateBoard).promise();
+        res.send();
+      } catch (error) {
+        res.send(JSON.stringify(error));
+      }
+    }
+  }
+});
 
 // Delete a particular note from a particular board
 router.delete("/board/:boardId/note/:noteId", async (req, res) => {
