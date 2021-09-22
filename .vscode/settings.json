@@ -1,0 +1,18 @@
+{
+    "launch": {
+
+        "configurations": [
+            {
+                "name":"baseurl", 
+                "type" : "node",
+                "request": "attach",
+                "env": {
+                    "baseurl": "development"
+                }
+            }
+        ]
+            ,
+        "compounds": []
+    },
+
+}
