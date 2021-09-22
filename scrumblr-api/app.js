@@ -29,7 +29,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY"; 
+const table = "scrumblr-api-zain-ScrumblrDB-1OTASWGWJTDOZ"; 
 
 let board_id, note_id
 
@@ -162,10 +162,10 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
 
   switch(isIdAlphaNumeric(board_id))
   {
-    case true : 
+    case false:
       errorReturn(404, "BoardId isn't valid", res)
       return;
-    case false:
+    case true : 
     default:
   }
 
@@ -261,26 +261,28 @@ router.delete("/board/:BoardId", async (req, res) => {
   }
 });
 
-//Create a note for a specified board
+// Create a note for a specified board
+// cover a scenario in which url path is -> /board//note
 router.post("/board/:BoardId/note", async (req, res) => {
 
+  // convert the below if to switch
   if (!("BoardId" in req.params)) {
     board_id = "";
-    errorReturn(404, "Board Id is not present in the parameters", res)
+    errorReturn(404, "Board Id is not present in the parameters", res) // causing problem
   } else {
     board_id = req.params.BoardId;
   }
 
   switch(isIdAlphaNumeric(board_id)) {
     case false:
-     errorReturn(400, "Board Id is not valid", res)
+     errorReturn(400, "Board Id is not valid", res) // works
      return;
     case true:
     default:
   }
 
   const textForNote = req.body.singleNote;
-  switch(typeof textForNote === 'string' && isEmpty(textForNote)) {
+  switch(typeof textForNote === 'string' && isEmpty(textForNote)) { //inserts integers empty strings (come back to it)
     case false:
       errorReturn(400,"Topic for note is invalid", res)
       return;
@@ -288,8 +290,6 @@ router.post("/board/:BoardId/note", async (req, res) => {
       default:
 
   }
-
-
 
   const singleNote = {
     note_id: uuidv4(),
@@ -305,7 +305,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
   switch(isEmpty(boards.Items))
   {
     case true :
-      errorReturn(404,"No boards found in the database", res)
+      errorReturn(404,"No boards found in the database", res) // doesn't work and throws internal server error
       return;
       case false:
         default:
@@ -351,13 +351,13 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
     note_id = req.params.noteId;
   }
-  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) 
+  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id))  //doesn't work
   {
     case false:
       errorReturn(400, "Id isnt valid", res)
       return;
-      case true:
-        default:
+    case true:
+      default:
 
   }
 
@@ -418,8 +418,6 @@ let isNotePresent = false;
   } catch {
     res.send(JSON.stringify(err))
   }
-      
-      
 });
 
 // Update a specific note
