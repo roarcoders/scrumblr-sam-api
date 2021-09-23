@@ -29,18 +29,26 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-zain-ScrumblrDB-1OTASWGWJTDOZ"; 
+const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY"; 
 
 let board_id, note_id
 
 const isEmpty = (obj) => {
-  switch (JSON.stringify(obj) == JSON.stringify({})) {
-    case true:
-      return true;
-    case false:
-      return false;
+  
+  if(obj == null)
+  {
+ 
+    return false;
+  }
+  else 
+  {
+  switch (Object.keys(obj).length === 0) {
+       case true:
+        return true;
+    case false:    
     default:
       return false;
+  }
   }
 }
 
@@ -281,10 +289,11 @@ router.post("/board/:BoardId/note", async (req, res) => {
     default:
   }
 
-  const textForNote = req.body.singleNote;
-  switch(typeof textForNote === 'string' && isEmpty(textForNote)) { //inserts integers empty strings (come back to it)
+  let textForNote = req.body.singleNote;
+ 
+  switch(typeof textForNote === 'string' && !isEmpty(textForNote)) { //inserts integers empty strings (come back to it)
     case false:
-      errorReturn(400,"Topic for note is invalid", res)
+      errorReturn(400,"Topic for note is invalid", res) //works
       return;
       case true:
       default:
@@ -302,7 +311,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
-  switch(isEmpty(boards.Items))
+  switch(isEmpty(boards.Items)) //works
   {
     case true :
       errorReturn(404,"No boards found in the database", res) // doesn't work and throws internal server error
@@ -324,21 +333,22 @@ router.post("/board/:BoardId/note", async (req, res) => {
           ":note": [singleNote],
         },
       };
-      switch(isBoardPresent)
-      {
-        case false:
-          errorReturn(404, "Board not found", res)
-          return;
-          case true:
-            default:
-      }
+    
       try {
         await docClient.update(updateBoard).promise();
         res.send();
       } catch (error) {
         res.send(JSON.stringify(error));
       }
-    }
+    }    
+  }
+  switch(isBoardPresent)
+  {
+    case false:
+      errorReturn(404, "Board not found", res)
+      return;
+      case true:
+        default:
   }
 });
 
@@ -354,7 +364,7 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
   switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id))  //doesn't work
   {
     case false:
-      errorReturn(400, "Id isnt valid", res)
+      errorReturn(400, "Id isnt valid", res)  //works
       return;
     case true:
       default:
@@ -371,12 +381,21 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
       ":boardId": board_id,
     },
   };
+  let board
+try{
+   board = await docClient.query(params).promise();
+}
+catch(err)
+{
+  errorReturn(404, "Board not found", res)  
+  return;
+}
 
-  let board = await docClient.query(params).promise();
   switch(isEmpty(board.Items))
   {
     case true:
-      errorReturn(404, "No Boards found in the database")
+      errorReturn(404, "Board not present in the database", res)  //works
+      return;
       case false:
         default:
   }
@@ -406,7 +425,7 @@ let isNotePresent = false;
   switch(isNotePresent)
   {
     case false:
-      errorReturn(404, "Note not found", res)
+      errorReturn(404, "Note not found", res)  //works
       return;
     case true:
     default:
