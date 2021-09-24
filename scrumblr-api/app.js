@@ -6,7 +6,8 @@ const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 const bodyParser = require('body-parser')
-const cors = require('cors')
+const cors = require('cors');
+const { text } = require("body-parser");
 
 var corsOptions = {
   origin: '*',
@@ -29,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY"; 
+const table = "scrumblr-api-zain-ScrumblrDB-3ZBPAM1PVC7Z";
 
 let board_id, note_id
 
@@ -368,7 +369,6 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
       return;
     case true:
       default:
-
   }
 
   let params = {
@@ -449,7 +449,22 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
   }
 
+  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
+    case false:
+      errorReturn(400, "Id isn't valid", res) //works
+      return;
+    case true:
+    default:
+  }
+
   const textForNote = req.body.singleNote;
+
+  switch (typeof textForNote === "string" && !isEmpty(textForNote)) {
+    case false:
+      errorReturn(400, "Topic is not valid", res)
+    case true:
+    default:
+  }
 
   let params = {
     TableName: table,
