@@ -404,7 +404,8 @@ catch(err)
 
   let itemsFirstIndex = board.Items.find(Boolean);
   let params1;
-let isNotePresent = false;
+  let isNotePresent = false;
+
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
       isNotePresent = true;
@@ -475,10 +476,21 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
   };
 
   let board = await docClient.query(params).promise();
-  let updateNote
-  let note
+
+  switch(board.Items.length === 0){
+    case true:
+      errorReturn(404, "Board not found", res);
+      return;
+    case false:
+    default:
+  }
+
+  let updateNote, note
+  let isNotePresent = false
+
   for (note in board.Items.find(Boolean).board_notes) {
     if (board.Items.find(Boolean).board_notes[note].note_id === note_id) {
+      isNotePresent = true;
       updateNote = {
         TableName: table,
         Key: {
@@ -494,8 +506,15 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
   }
 
   try {
-    await docClient.update(updateNote).promise();
-    res.send();
+    switch(isNotePresent) {
+      case true:
+        await docClient.update(updateNote).promise();
+        res.send();
+        return;
+      case false:
+      default:
+        errorReturn(404, "Note not found", res)
+    }
   } catch (error) {
     res.send(error);
   }
