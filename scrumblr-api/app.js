@@ -33,6 +33,7 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 const table = "scrumblr-api-zain-ScrumblrDB-3ZBPAM1PVC7Z";
 
 let board_id, note_id
+let isNotePresent = false
 
 const isEmpty = (obj) => {
   
@@ -44,8 +45,8 @@ const isEmpty = (obj) => {
   else 
   {
   switch (Object.keys(obj).length === 0) {
-       case true:
-        return true;
+    case true:
+      return true;
     case false:    
     default:
       return false;
@@ -271,20 +272,18 @@ router.delete("/board/:BoardId", async (req, res) => {
 });
 
 // Create a note for a specified board
-// cover a scenario in which url path is -> /board//note
 router.post("/board/:BoardId/note", async (req, res) => {
 
   // convert the below if to switch
   if (!("BoardId" in req.params)) {
     board_id = "";
-    errorReturn(404, "Board Id is not present in the parameters", res) // causing problem
   } else {
     board_id = req.params.BoardId;
   }
 
   switch(isIdAlphaNumeric(board_id)) {
     case false:
-     errorReturn(400, "Board Id is not valid", res) // works
+     errorReturn(400, "Board Id is not valid", res)
      return;
     case true:
     default:
@@ -292,9 +291,9 @@ router.post("/board/:BoardId/note", async (req, res) => {
 
   let textForNote = req.body.singleNote;
  
-  switch(typeof textForNote === 'string' && !isEmpty(textForNote)) { //inserts integers empty strings (come back to it)
+  switch(typeof textForNote === 'string' && !isEmpty(textForNote)) {
     case false:
-      errorReturn(400,"Topic for note is invalid", res) //works
+      errorReturn(400,"Topic for note is invalid", res) 
       return;
       case true:
       default:
@@ -312,13 +311,13 @@ router.post("/board/:BoardId/note", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
-  switch(isEmpty(boards.Items)) //works
+  switch(isEmpty(boards.Items))
   {
-    case true :
-      errorReturn(404,"No boards found in the database", res) // doesn't work and throws internal server error
-      return;
+      case true :
+        errorReturn(404,"No boards found in the database", res)
+        return;
       case false:
-        default:
+      default:
     }
     let isBoardPresent = false;
   for (let board in boards.Items) {
@@ -400,11 +399,8 @@ catch(err)
         default:
   }
 
-
-
   let itemsFirstIndex = board.Items.find(Boolean);
   let params1;
-  let isNotePresent = false;
 
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
@@ -452,7 +448,7 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 
   switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
     case false:
-      errorReturn(400, "Id isn't valid", res) //works
+      errorReturn(400, "Id is not valid", res) //works
       return;
     case true:
     default:
@@ -479,14 +475,13 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 
   switch(board.Items.length === 0){
     case true:
-      errorReturn(404, "Board not found", res);
+      errorReturn(404, "Board not found", res); // crashes
       return;
     case false:
     default:
   }
 
   let updateNote, note
-  let isNotePresent = false
 
   for (note in board.Items.find(Boolean).board_notes) {
     if (board.Items.find(Boolean).board_notes[note].note_id === note_id) {
@@ -531,6 +526,13 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
   }
 
+  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
+    case false:
+      errorReturn(400, "Id is not valid", res)
+    case true:
+    default:
+  }
+
   let params = {
     TableName: table,
     KeyConditionExpression: "BoardId = :boardId",
@@ -540,18 +542,33 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
   };
 
   let board = await docClient.query(params).promise();
+
+  switch(isEmpty(board)){
+    case true:
+      errorReturn(404, "Board not found")
+    case false:
+    default:
+  }
+
   let itemsFirstIndex = board.Items.find(Boolean);
 
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
-      const singleNote = {
-        note_id: itemsFirstIndex.board_notes[note].note_id,
-        topic: itemsFirstIndex.board_notes[note].topic,
-        dateCrated: itemsFirstIndex.board_notes[note].dateCrated,
-      };
-      res.send(JSON.stringify(singleNote));
+        isNotePresent = true
+        const singleNote = {
+          note_id: itemsFirstIndex.board_notes[note].note_id,
+          topic: itemsFirstIndex.board_notes[note].topic,
+          dateCrated: itemsFirstIndex.board_notes[note].dateCrated,
+        };
+        try { 
+          if (isNotePresent) {
+            res.send(JSON.stringify(singleNote))
+          } 
+        } catch (error) {
+            res.send(JSON.stringify(error))
+        }
+      }
     }
-  }
 });
 
 app.use("/", router);
