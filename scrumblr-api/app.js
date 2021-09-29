@@ -39,7 +39,6 @@ const isEmpty = (obj) => {
   
   if(obj == null)
   {
- 
     return false;
   }
   else 
@@ -55,7 +54,7 @@ const isEmpty = (obj) => {
 }
 
 const errorReturn = (responseStatus, message,response) => {
-  response.status (responseStatus)
+  response.status(responseStatus)
   response.send(JSON.stringify(message))
 }
 
@@ -543,31 +542,38 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
 
   let board = await docClient.query(params).promise();
 
-  switch(isEmpty(board)){
+  switch(board.Items.length === 0) {
     case true:
-      errorReturn(404, "Board not found")
+      errorReturn(404, "Board not found", res)
+      return;
     case false:
     default:
   }
 
-  let itemsFirstIndex = board.Items.find(Boolean);
+  const singleNote = {}
 
-  for (let note in itemsFirstIndex.board_notes) {
-    if (itemsFirstIndex.board_notes[note].note_id === note_id) {
+  for (let note in board.Items.find(Boolean).board_notes) {
+    if (board.Items.find(Boolean).board_notes[note].note_id === note_id) {
         isNotePresent = true
-        const singleNote = {
-          note_id: itemsFirstIndex.board_notes[note].note_id,
-          topic: itemsFirstIndex.board_notes[note].topic,
-          dateCrated: itemsFirstIndex.board_notes[note].dateCrated,
+        singleNote = {
+          note_id: board.Items.find(Boolean).board_notes[note].note_id,
+          topic: board.Items.find(Boolean).board_notes[note].topic,
+          dateCreated: board.Items.find(Boolean).board_notes[note].dateCreated,
         };
-        try { 
-          if (isNotePresent) {
-            res.send(JSON.stringify(singleNote))
-          } 
-        } catch (error) {
-            res.send(JSON.stringify(error))
-        }
       }
+    }
+    try { 
+      switch (isNotePresent) {
+        case true:
+          res.send(JSON.stringify(singleNote));
+          return;
+        case false:
+          errorReturn(404, "Note not found", res)
+          return;
+        default:
+      }
+    } catch (error) {
+        res.send(JSON.stringify(error))
     }
 });
 
