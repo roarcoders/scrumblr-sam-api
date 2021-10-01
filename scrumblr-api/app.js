@@ -30,10 +30,20 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-zain-ScrumblrDB-3ZBPAM1PVC7Z";
+const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY";
 
 let board_id, note_id
 let isNotePresent = false
+const regex = new RegExp('^[a-zA-Z0-9-  ]*$');
+
+const isNameValid = (strName) => {
+  if(strName.length <= 32 && regex.test(strName))
+  {
+    return true;
+  }
+  return false;
+}
+
 
 const isEmpty = (obj) => {
   
@@ -59,7 +69,6 @@ const errorReturn = (responseStatus, message,response) => {
 }
 
 const isIdAlphaNumeric = (test_board_id) => {
-  const regex = new RegExp('^[a-zA-Z0-9-]+$');
   return (regex.test(test_board_id) && test_board_id.length === 36)
 }
 
@@ -109,15 +118,27 @@ let params = {
 const tableRows = await docClient.scan(params).promise();
 
 let board = tableRows.Items.find(board => board.BoardId === board_id)
-if (isEmpty(board))
-{
-  errorReturn(404,"No boards not found in the database", res)
-  return;
-}
+// if(typeof board === 'undefined')
+// {
+//   errorReturn(404, "Board not found", res)
+//   return;
+// }
+// if (isEmpty(board))
+// {
+//   errorReturn(404,"No boards not found in the database", res)
+//   return;
+// }
 
   try {
     if(board)
+    {
     res.send(board);
+    }
+    else
+    {
+      errorReturn(404, "Board not found", res)
+       return;
+    }
   } catch (error) {
     res.send(JSON.stringify(error));
   }
@@ -132,9 +153,9 @@ router.options('*', cors())
 router.post("/board",cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   let board_name = req.body.BoardName;
-  if(isEmpty(board_name))
+  if(isEmpty(board_name) || !isNameValid(board_name))
   {
-    errorReturn(404,"Board Name is empty", res)
+    errorReturn(404,"Board Name isn't valid", res)
     return;
   }
   
@@ -186,6 +207,14 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
     case true:
     default:
   }
+ switch(isNameValid(req.body.BoardName))
+ {
+  case false:
+    errorReturn(404, "Board Name is not valid", res)
+    return;
+    case true:
+    default:
+}
 
   let params = {
     TableName: table,
