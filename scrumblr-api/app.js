@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY";
+const table = "scrumblr-api-zain-ScrumblrDB-3ZBPAM1PVC7Z";
 
 let board_id, note_id
 let isNotePresent = false
@@ -43,7 +43,6 @@ const isNameValid = (strName) => {
   }
   return false;
 }
-
 
 const isEmpty = (obj) => {
   
@@ -118,16 +117,6 @@ let params = {
 const tableRows = await docClient.scan(params).promise();
 
 let board = tableRows.Items.find(board => board.BoardId === board_id)
-// if(typeof board === 'undefined')
-// {
-//   errorReturn(404, "Board not found", res)
-//   return;
-// }
-// if (isEmpty(board))
-// {
-//   errorReturn(404,"No boards not found in the database", res)
-//   return;
-// }
 
   try {
     if(board)
@@ -171,7 +160,7 @@ router.post("/board",cors(corsOptions), async (req, res) => {
   try {
     await docClient.put(params).promise();
     let boardIdObj = {
-      boardID : boardId
+      BoardId : boardId
     }
     res.send(boardIdObj)
   } catch (error) {
@@ -199,22 +188,23 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
     default:
   }
 
-  switch(typeof req.body.BoardName === 'string') // works
+  let board_name = req.body.BoardName;
+  switch(typeof board_name === 'string' || isEmpty(board_name)) 
   {
     case false:
-      errorReturn(404, "Board Name is not valid", res)
+      errorReturn(404, "Board name not valid", res)
       return;
     case true:
     default:
   }
- switch(isNameValid(req.body.BoardName))
- {
-  case false:
-    errorReturn(404, "Board Name is not valid", res)
-    return;
+
+  switch(isNameValid(req.body.BoardName)) {
+    case false:
+      errorReturn(404, "Board name not valid", res)
+      return;
     case true:
     default:
-}
+  }
 
   let params = {
     TableName: table,
@@ -285,7 +275,7 @@ router.delete("/board/:BoardId", async (req, res) => {
 
   try {
     if(isBoardPresent) {
-      data = await docClient.delete(params1).promise();
+      await docClient.delete(params1).promise();
       res.status(200);
       res.send();
     }
