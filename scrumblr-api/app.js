@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-zain-ScrumblrDB-3ZBPAM1PVC7Z";
+const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY";
 
 let board_id, note_id
 let isNotePresent = false
@@ -50,16 +50,8 @@ const isEmpty = (obj) => {
   {
     return false;
   }
-  else 
-  {
-  switch (Object.keys(obj).length === 0) {
-    case true:
-      return true;
-    case false:    
-    default:
-      return false;
-  }
-  }
+  return Object.keys(obj).length === 0;
+
 }
 
 const errorReturn = (responseStatus, message,response) => {
@@ -189,7 +181,7 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
   }
 
   let board_name = req.body.BoardName;
-  switch(typeof board_name === 'string' || isEmpty(board_name)) 
+  switch(typeof board_name === 'string' && !isEmpty(board_name)) 
   {
     case false:
       errorReturn(404, "Board name not valid", res)
@@ -216,12 +208,14 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
       ":boardName": req.body.BoardName
     }
   }
+  
   try{
     await docClient.update(params).promise();
     res.status(200)
     res.send()
   } catch (error){
-    res.send(JSON.stringify(error))
+    errorReturn(404, "Board not present", res)
+    return;
   }
 })
 
