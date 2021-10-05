@@ -200,22 +200,42 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
 
   let params = {
     TableName: table,
-    Key:{
-      BoardId: board_id
+    Key: {
+      "BoardId": board_id,
     },
-    UpdateExpression: "SET BoardName = :boardName",
+    KeyConditionExpression: "BoardId = :boardId",
     ExpressionAttributeValues: {
-      ":boardName": req.body.BoardName
-    }
-  }
-  
-  try{
-    await docClient.update(params).promise();
-    res.status(200)
-    res.send()
-  } catch (error){
-    errorReturn(404, "Board not present", res)
-    return;
+      ":boardId": board_id,
+    },
+  };
+
+  let board = await docClient.query(params).promise();
+
+  switch (isEmpty(board.Items)) {
+    case false:
+      let params1 = {
+        TableName: table,
+        Key:{
+          BoardId: board_id
+        },
+        UpdateExpression: "SET BoardName = :boardName",
+        ExpressionAttributeValues: {
+          ":boardName": req.body.BoardName
+        }
+      }
+      
+      try{
+        await docClient.update(params1).promise();
+        res.status(200)
+        res.send()
+      } catch (error){
+        res.send(JSON.stringify(error));
+      }
+
+    case true:
+    default:
+      errorReturn(404, "Board not found", res) 
+      return;
   }
 })
 
