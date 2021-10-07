@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY";
+const table = "scrumblr-api-zain-ScrumblrDB-1L68L4H7PM4KC";
 
 let board_id, note_id
 let isNotePresent = false
@@ -46,8 +46,7 @@ const isNameValid = (strName) => {
 
 const isEmpty = (obj) => {
   
-  if(obj == null)
-  {
+  if(obj == null) {
     return false;
   }
   return Object.keys(obj).length === 0;
@@ -132,14 +131,16 @@ router.options('*', cors())
 
 // Create a new board
 router.post("/board",cors(corsOptions), async (req, res) => {
+
   const boardId = uuidv4();
   let board_name = req.body.BoardName;
-  if(isEmpty(board_name) || !isNameValid(board_name))
-  {
+
+  if (isEmpty(board_name) || !isNameValid(board_name)) {
     errorReturn(404,"Board Name isn't valid", res)
     return;
   }
-  
+  board_name = board_name.trim(); // come to this
+
   let params = {
     TableName: table,
     Item: {
@@ -321,7 +322,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
     default:
   }
 
-  let textForNote = req.body.singleNote;
+  let textForNote = req.body.singleNote.trim();
  
   switch(typeof textForNote === 'string' && !isEmpty(textForNote)) {
     case false:
