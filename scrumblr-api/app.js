@@ -8,10 +8,13 @@ const AWS = require("aws-sdk");
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
+var corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
-
-
 router.use(cors());
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -26,9 +29,9 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-1MVOKMASEC4G"; 
+const table = "scrumblr-api-1-ScrumblrDB-1LHEXHA5ZHG9T";
 
-let board_id, note_id;
+let board_id, note_id
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
@@ -39,22 +42,24 @@ router.get("/board", async (req, res) => {
   let data;
 
   try {
+    
     data = await docClient.scan(params).promise();
+
   } catch (error) {
     res.send(JSON.stringify(error));
   }
+  res.status(200);
   res.send(JSON.stringify(data));
 });
 
 //Get a particular board
-router.get("/board/:BoardId", async (req, res) => {
+router.get("/board/:boardId", async (req, res) => {
 
-let board_id
-if (!('BoardId' in req.params)){
+if (!('boardId' in req.params)){
     board_id = ""
 }
 else {
-    board_id = req.params.BoardId
+    board_id = req.params.boardId
 }
 
 let params = {
@@ -64,28 +69,19 @@ let params = {
 const tableRows = await docClient.scan(params).promise();
 let data
 
-for (let row in tableRows.Items) {
-  if (tableRows.Items[row].BoardId === board_id) {
-      let params1 = {
-        TableName: table,
-        KeyConditionExpression: "BoardId = :boardId",
-        ExpressionAttributeValues: {
-          ":boardId": board_id,
-        },
-      };
-
-      try {
-        data = await docClient.query(params1).promise();
-        res.send(data);
-      } catch (error) {
-        res.send(JSON.stringify(error));
-      }
-    }
+let board = tableRows.Items.find(board => board.BoardId === board_id)
+  try {
+    res.send(board);
+  } catch (error) {
+    res.send(JSON.stringify(error));
   }
 });
 
+router.options('*', cors())
+
+
 //Create a new board
-router.post("/board", async (req, res) => {
+router.post("/board",cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   let board_name = req.body.BoardName;
   
@@ -97,17 +93,15 @@ router.post("/board", async (req, res) => {
       board_notes: [],
     },
   };
-
-  let boardIdObj = {
-    boardID: boardId  
-  }
-
   let data;
-
   try {
     data = await docClient.put(params).promise();
-    res.set('Content-Type','application/json')
+    let boardIdObj = {
+      boardID : boardId
+    }
+
     res.send(boardIdObj)
+ 
   } catch (error) {
     res.send(JSON.stringify(error));
   }
@@ -127,32 +121,39 @@ router.delete("/board/:BoardId", async (req, res) => {
 
   let boards = await docClient.scan(params).promise();
   let data, params1;
-
-  let isBoardPresent = false
-
+  let isBoardPresent = false;
   for (let board in boards.Items) {
     if (boards.Items[board].BoardId === board_id) {
-      isBoardPresent = true
+  isBoardPresent = true;
+
       params1 = {
         TableName: table,
         Key: {
           BoardId: board_id,
         },
       };
-    }
-    try {
-      if (isBoardPresent) {
-      data = await docClient.delete(params1).promise();
-      res.send("DELETED BOARD" + data);
-      }
-      else{
-        res.status(404);
-        res.send("Board not found")
-      }
-    } catch (error) {
-      res.send(JSON.stringify("Error occured while deleting -> " + error));
+
+     
     }
   }
+
+  try {
+    if(isBoardPresent)
+    {
+      data = await docClient.delete(params1).promise();
+      res.status(200);
+      res.send("DELETED BOARD");
+    }
+    else
+    {
+      res.status(404);
+      res.send("Board not found");
+    }
+  }
+   catch (error) {
+    res.send(JSON.stringify("Error occured while deleting -> " + error));
+  }
+
 });
 
 //Create a note for a specified board
