@@ -6,7 +6,8 @@ const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 const AWS = require("aws-sdk");
 const bodyParser = require('body-parser')
-const cors = require('cors')
+const cors = require('cors');
+const { text } = require("body-parser");
 
 var corsOptions = {
   origin: '*',
@@ -29,9 +30,46 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-1LHEXHA5ZHG9T";
+const table = "scrumblr-api-zain-ScrumblrDB-3ZBPAM1PVC7Z";
 
 let board_id, note_id
+let isNotePresent = false
+const regex = new RegExp('^[a-zA-Z0-9-  ]*$');
+
+const isNameValid = (strName) => {
+  if(strName.length <= 32 && regex.test(strName))
+  {
+    return true;
+  }
+  return false;
+}
+
+const isEmpty = (obj) => {
+  
+  if(obj == null)
+  {
+    return false;
+  }
+  else 
+  {
+  switch (Object.keys(obj).length === 0) {
+    case true:
+      return true;
+    case false:    
+    default:
+      return false;
+  }
+  }
+}
+
+const errorReturn = (responseStatus, message,response) => {
+  response.status(responseStatus)
+  response.send(JSON.stringify(message))
+}
+
+const isIdAlphaNumeric = (test_board_id) => {
+  return (regex.test(test_board_id) && test_board_id.length === 36)
+}
 
 //List all boards in memory(array)
 router.get("/board", async (req, res) => {
@@ -42,9 +80,7 @@ router.get("/board", async (req, res) => {
   let data;
 
   try {
-    
     data = await docClient.scan(params).promise();
-
   } catch (error) {
     res.send(JSON.stringify(error));
   }
@@ -53,13 +89,25 @@ router.get("/board", async (req, res) => {
 });
 
 //Get a particular board
-router.get("/board/:boardId", async (req, res) => {
+router.get("/board/:BoardId", async (req, res) => {
 
-if (!('boardId' in req.params)){
+let board_id
+if (!('BoardId' in req.params)){
     board_id = ""
+    errorReturn(404, "BoardId is not present in parameters", res)
+    return;
 }
 else {
-    board_id = req.params.boardId
+    board_id = req.params.BoardId
+}
+
+switch(isIdAlphaNumeric(board_id))
+{
+  case false:
+    errorReturn(400, "BoardId is not valid", res)
+    return;
+  case true:
+  default:
 }
 
 let params = {
@@ -67,23 +115,38 @@ let params = {
 }
 
 const tableRows = await docClient.scan(params).promise();
-let data
 
 let board = tableRows.Items.find(board => board.BoardId === board_id)
+
   try {
+    if(board)
+    {
     res.send(board);
+    }
+    else
+    {
+      errorReturn(404, "Board not found", res)
+       return;
+    }
   } catch (error) {
     res.send(JSON.stringify(error));
   }
 });
 
+
+
 router.options('*', cors())
 
 
-//Create a new board
+// Create a new board
 router.post("/board",cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   let board_name = req.body.BoardName;
+  if(isEmpty(board_name) || !isNameValid(board_name))
+  {
+    errorReturn(404,"Board Name isn't valid", res)
+    return;
+  }
   
   let params = {
     TableName: table,
@@ -93,26 +156,92 @@ router.post("/board",cors(corsOptions), async (req, res) => {
       board_notes: [],
     },
   };
-  let data;
-  try {
-    data = await docClient.put(params).promise();
-    let boardIdObj = {
-      boardID : boardId
-    }
 
+  try {
+    await docClient.put(params).promise();
+    let boardIdObj = {
+      BoardId : boardId
+    }
     res.send(boardIdObj)
- 
   } catch (error) {
     res.send(JSON.stringify(error));
   }
 });
 
+//Update the board name
+router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
+  if (!('BoardId') in req.params){
+    board_id = ""
+    errorReturn(404, "BoardId is not present in parameters", res)
+    return;
+  }
+  else {
+    board_id = req.params.BoardId
+  }
+
+  switch(isIdAlphaNumeric(board_id))
+  {
+    case false:
+      errorReturn(404, "BoardId isn't valid", res)
+      return;
+    case true : 
+    default:
+  }
+
+  let board_name = req.body.BoardName;
+  switch(typeof board_name === 'string' || isEmpty(board_name)) 
+  {
+    case false:
+      errorReturn(404, "Board name not valid", res)
+      return;
+    case true:
+    default:
+  }
+
+  switch(isNameValid(req.body.BoardName)) {
+    case false:
+      errorReturn(404, "Board name not valid", res)
+      return;
+    case true:
+    default:
+  }
+
+  let params = {
+    TableName: table,
+    Key:{
+      BoardId: board_id
+    },
+    UpdateExpression: "SET BoardName = :boardName",
+    ExpressionAttributeValues: {
+      ":boardName": req.body.BoardName
+    }
+  }
+  try{
+    await docClient.update(params).promise();
+    res.status(200)
+    res.send()
+  } catch (error){
+    res.send(JSON.stringify(error))
+  }
+})
+
 //Delete a specific board
 router.delete("/board/:BoardId", async (req, res) => {
  if (!("BoardId" in req.params)) {
     board_id = "";
+    errorReturn(404, "Board Id is not present in the parameters", res)
+    return;
   } else {
     board_id = req.params.BoardId;
+  }
+
+  switch(isIdAlphaNumeric(board_id)) // works
+  {
+    case false:
+      errorReturn(404, "Board Id is not valid", res)
+      return;
+    case true :
+    default:
   }
 
   let params = {
@@ -120,55 +249,79 @@ router.delete("/board/:BoardId", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
-  let data, params1;
+
+  switch(boards.Items.length === 0)
+  {
+    case true:
+      errorReturn(404, "No Boards found in Database", res) //works
+      return;
+    case false :
+    default:
+
+  }
+  let params1;
   let isBoardPresent = false;
   for (let board in boards.Items) {
     if (boards.Items[board].BoardId === board_id) {
-  isBoardPresent = true;
-
-      params1 = {
-        TableName: table,
-        Key: {
-          BoardId: board_id,
-        },
-      };
-
-     
+        isBoardPresent = true;
+        params1 = {
+          TableName: table,
+          Key: {
+            BoardId: board_id,
+          },
+        };
     }
   }
 
   try {
-    if(isBoardPresent)
-    {
-      data = await docClient.delete(params1).promise();
+    if(isBoardPresent) {
+      await docClient.delete(params1).promise();
       res.status(200);
-      res.send("DELETED BOARD");
+      res.send();
     }
-    else
-    {
-      res.status(404);
-      res.send("Board not found");
+    else {
+      errorReturn(404, "Board Not Found", res)
+      return;
     }
   }
    catch (error) {
-    res.send(JSON.stringify("Error occured while deleting -> " + error));
+    res.send(JSON.stringify(error));
   }
-
 });
 
-//Create a note for a specified board
+// Create a note for a specified board
 router.post("/board/:BoardId/note", async (req, res) => {
+
+  // convert the below if to switch
   if (!("BoardId" in req.params)) {
     board_id = "";
   } else {
     board_id = req.params.BoardId;
   }
 
-  const textForNote = req.body.singleNote;
+  switch(isIdAlphaNumeric(board_id)) {
+    case false:
+     errorReturn(400, "Board Id is not valid", res)
+     return;
+    case true:
+    default:
+  }
+
+  let textForNote = req.body.singleNote;
+ 
+  switch(typeof textForNote === 'string' && !isEmpty(textForNote)) {
+    case false:
+      errorReturn(400,"Topic for note is invalid", res) 
+      return;
+      case true:
+      default:
+
+  }
+
   const singleNote = {
     note_id: uuidv4(),
     topic: textForNote,
-    dateCrated: Date.now(),
+    dateCreated: Date.now(),
   };
 
   let params = {
@@ -176,9 +329,19 @@ router.post("/board/:BoardId/note", async (req, res) => {
   };
 
   let boards = await docClient.scan(params).promise();
+  switch(isEmpty(boards.Items))
+  {
+      case true :
+        errorReturn(404,"No boards found in the database", res)
+        return;
+      case false:
+      default:
+    }
+    let isBoardPresent = false;
   for (let board in boards.Items) {
     if (boards.Items[board].BoardId === board_id) {
-      let updateBoard = {
+      isBoardPresent = true;
+      let updateBoard = { 
         TableName: table,
         Key: {
           "BoardId": board_id,
@@ -188,14 +351,22 @@ router.post("/board/:BoardId/note", async (req, res) => {
           ":note": [singleNote],
         },
       };
-
+    
       try {
         await docClient.update(updateBoard).promise();
-        res.send(JSON.stringify("Note Inserted Successfully"));
+        res.send();
       } catch (error) {
         res.send(JSON.stringify(error));
       }
-    }
+    }    
+  }
+  switch(isBoardPresent)
+  {
+    case false:
+      errorReturn(404, "Board not found", res)
+      return;
+      case true:
+        default:
   }
 });
 
@@ -208,25 +379,79 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
     note_id = req.params.noteId;
   }
+  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id))  //doesn't work
+  {
+    case false:
+      errorReturn(400, "Id isnt valid", res)  //works
+      return;
+    case true:
+      default:
+  }
 
   let params = {
     TableName: table,
+    Key: {
+      "BoardId": board_id,
+    },
     KeyConditionExpression: "BoardId = :boardId",
     ExpressionAttributeValues: {
       ":boardId": board_id,
     },
   };
+  let board
+try{
+   board = await docClient.query(params).promise();
+}
+catch(err)
+{
+  errorReturn(404, "Board not found", res)  
+  return;
+}
 
-  let board = await docClient.query(params).promise();
+  switch(isEmpty(board.Items))
+  {
+    case true:
+      errorReturn(404, "Board not present in the database", res)  //works
+      return;
+      case false:
+        default:
+  }
+
   let itemsFirstIndex = board.Items.find(Boolean);
+  let params1;
 
   for (let note in itemsFirstIndex.board_notes) {
     if (itemsFirstIndex.board_notes[note].note_id === note_id) {
-      itemsFirstIndex.board_notes.splice(note, 1);
-    }
-  }
-  res.send(JSON.stringify(itemsFirstIndex));
+      isNotePresent = true;
+        itemsFirstIndex.board_notes.splice(note, 1);
 
+      params1= {
+        TableName: table,
+        Key: {
+          "BoardId": board_id,
+        },
+        UpdateExpression: "SET board_notes = :board_notes_new_array",
+        ExpressionAttributeValues: {
+          ":board_notes_new_array": itemsFirstIndex.board_notes,
+        },
+      };
+    } 
+  }
+  switch(isNotePresent)
+  {
+    case false:
+      errorReturn(404, "Note not found", res)  //works
+      return;
+    case true:
+    default:
+
+  }
+  try{
+    await docClient.update(params1).promise();
+    res.send();
+  } catch {
+    res.send(JSON.stringify(err))
+  }
 });
 
 // Update a specific note
@@ -239,7 +464,22 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
   }
 
+  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
+    case false:
+      errorReturn(400, "Id is not valid", res) //works
+      return;
+    case true:
+    default:
+  }
+
   const textForNote = req.body.singleNote;
+
+  switch (typeof textForNote === "string" && !isEmpty(textForNote)) {
+    case false:
+      errorReturn(400, "Topic is not valid", res)
+    case true:
+    default:
+  }
 
   let params = {
     TableName: table,
@@ -250,19 +490,27 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
   };
 
   let board = await docClient.query(params).promise();
-  let updateNote
-  let note
+
+  switch(board.Items.length === 0){
+    case true:
+      errorReturn(404, "Board not found", res); // crashes
+      return;
+    case false:
+    default:
+  }
+
+  let updateNote, note
+
   for (note in board.Items.find(Boolean).board_notes) {
     if (board.Items.find(Boolean).board_notes[note].note_id === note_id) {
+      isNotePresent = true;
       updateNote = {
         TableName: table,
         Key: {
           "BoardId": board_id,
         },
-        // KeyConditionExpression : "BoardId = :board_id",
         UpdateExpression: "SET board_notes[" + note + "].topic = :noteText",
         ExpressionAttributeValues: {
-          //":board_id": board_id,
           ":noteText": textForNote,
         },
       };
@@ -271,10 +519,17 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
   }
 
   try {
-    await docClient.update(updateNote).promise();
-    res.send(JSON.stringify(board.Items.find(Boolean).board_notes[note]));
+    switch(isNotePresent) {
+      case true:
+        await docClient.update(updateNote).promise();
+        res.send();
+        return;
+      case false:
+      default:
+        errorReturn(404, "Note not found", res)
+    }
   } catch (error) {
-    res.send(JSON.stringify("An error occurred " + error));
+    res.send(error);
   }
 });
 
@@ -282,11 +537,18 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
 
 router.get("/board/:boardId/note/:noteId", async (req, res) => {
   if (!("boardId" in req.params) && "noteId" in req.params) {
-    note_id = " ";
-    board_id = " ";
+    note_id = "";
+    board_id = "";
   } else {
     note_id = req.params.noteId;
     board_id = req.params.boardId;
+  }
+
+  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
+    case false:
+      errorReturn(400, "Id is not valid", res)
+    case true:
+    default:
   }
 
   let params = {
@@ -298,19 +560,40 @@ router.get("/board/:boardId/note/:noteId", async (req, res) => {
   };
 
   let board = await docClient.query(params).promise();
-  let itemsFirstIndex = board.Items.find(Boolean);
 
-  for (let note in itemsFirstIndex.board_notes) {
-    if (itemsFirstIndex.board_notes[note].note_id === note_id) {
-      const singleNote = {
-        note_id: itemsFirstIndex.board_notes[note].note_id,
-        topic: itemsFirstIndex.board_notes[note].topic,
-        dateCrated: itemsFirstIndex.board_notes[note].dateCrated,
-      };
-
-      res.send(JSON.stringify(singleNote));
-    }
+  switch(board.Items.length === 0) {
+    case true:
+      errorReturn(404, "Board not found", res)
+      return;
+    case false:
+    default:
   }
+
+  const singleNote = {}
+
+  for (let note in board.Items.find(Boolean).board_notes) {
+    if (board.Items.find(Boolean).board_notes[note].note_id === note_id) {
+        isNotePresent = true
+        singleNote = {
+          note_id: board.Items.find(Boolean).board_notes[note].note_id,
+          topic: board.Items.find(Boolean).board_notes[note].topic,
+          dateCreated: board.Items.find(Boolean).board_notes[note].dateCreated,
+        };
+      }
+    }
+    try { 
+      switch (isNotePresent) {
+        case true:
+          res.send(JSON.stringify(singleNote));
+          return;
+        case false:
+          errorReturn(404, "Note not found", res)
+          return;
+        default:
+      }
+    } catch (error) {
+        res.send(JSON.stringify(error))
+    }
 });
 
 app.use("/", router);

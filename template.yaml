@@ -23,6 +23,11 @@ Resources:
       CodeUri: scrumblr-api/
       Handler: lambda.handler
       Runtime: nodejs12.x
+      # VpcConfig:
+      #   SubnetIds:
+      #     - !Ref LambdaSubnet
+      #   SecurityGroupIds:
+      #     - !Ref LambdaSecurityGroup
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -32,8 +37,104 @@ Resources:
             Method: ANY
 
       Policies:
-      # Give DynamoDB Full Access to your Lambda Function
-      - AmazonDynamoDBFullAccess
+        # Give DynamoDB Full Access to your Lambda Function
+        - AmazonDynamoDBFullAccess
+
+  # VPC:
+  #   Type: AWS::EC2::VPC
+  #   Properties:
+  #     CidrBlock: 10.0.0.0/16
+
+  # InternetGateway:
+  #   Type: AWS::EC2::InternetGateway
+
+  # VPCGatewayAttachment:
+  #   Type: AWS::EC2::VPCGatewayAttachment
+  #   Properties:
+  #     InternetGatewayId: !Ref InternetGateway
+  #     VpcId: !Ref VPC
+
+  # PublicSubnet:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref VPC
+  #     CidrBlock: 10.0.1.0/28
+  #     AvailabilityZone: !Select
+  #       - 0
+  #       - !GetAZs
+  #         Ref: AWS::Region
+
+  # LambdaSubnet:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref VPC
+  #     CidrBlock: 10.0.128.0/20
+  #     AvailabilityZone: !Select
+  #       - 1
+  #       - !GetAZs
+  #         Ref: AWS::Region
+
+  # NatGatewayEIP:
+  #   Type: AWS::EC2::EIP
+  #   Properties:
+  #     Domain: vpc
+
+  # NatGateway:
+  #   Type: AWS::EC2::NatGateway
+  #   Properties:
+  #     SubnetId: !Ref PublicSubnet
+  #     AllocationId: !GetAtt NatGatewayEIP.AllocationId
+
+  # PublicRouteTable:
+  #   Type: AWS::EC2::RouteTable
+  #   Properties:
+  #     VpcId: !Ref VPC
+
+  # PublicRTAssociation:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     RouteTableId: !Ref PublicRouteTable
+  #     SubnetId: !Ref PublicSubnet
+
+  # LambdaRouteTable:
+  #   Type: AWS::EC2::RouteTable
+  #   Properties:
+  #     VpcId: !Ref VPC
+
+  # LambdaRouteTableAssociation:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     RouteTableId: !Ref LambdaRouteTable
+  #     SubnetId: !Ref LambdaSubnet
+
+  # InternetRoute:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref PublicRouteTable
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     GatewayId: !Ref InternetGateway
+
+  # NatGatewayRoute:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: !Ref LambdaRouteTable
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref NatGateway
+
+  # LambdaSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: Open Lambda ports
+  #     VpcId: !Ref VPC
+  #     SecurityGroupIngress:
+  #       - CidrIp: 0.0.0.0/0
+  #         FromPort: 80
+  #         ToPort: 80
+  #         IpProtocol: tcp
+  #       - CidrIp: 0.0.0.0/0
+  #         FromPort: 443
+  #         ToPort: 443
+  #         IpProtocol: tcp
 
   ScrumblrDB:
     Type: AWS::DynamoDB::Table
