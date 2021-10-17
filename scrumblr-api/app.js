@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-zain-ScrumblrDB-1L68L4H7PM4KC";
+const table = "scrumblr-api-zain-ScrumblrDB-EU8CC5QZPJLR";
 
 let board_id, note_id
 let isNotePresent = false
@@ -110,7 +110,9 @@ let board = tableRows.Items.find(board => board.BoardId === board_id)
 
   try {
     if(board) {
-      res.send(board);
+      let boardJSONString = JSON.stringify(board);
+      console.log(boardJSONString);
+      res.send(JSON.parse(boardJSONString));
     } else {
       errorReturn(404, "Board not found", res)
        return;
