@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-zain-ScrumblrDB-EU8CC5QZPJLR";
+const table = "scrumblr-api-zain-ScrumblrDB-19J7V88JU1JDO";
 
 let board_id, note_id
 let isNotePresent = false
@@ -331,6 +331,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
   }
 
   let textForNote = req.body.singleNote;
+  let noteId = req.body.id
 
   if (isEmpty(textForNote) || !isNameValid(textForNote)) {
     errorReturn(404,"Topic of note isn't valid", res)
@@ -348,7 +349,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
   }
 
   const singleNote = {
-    note_id: uuidv4(),
+    note_id: noteId,
     topic: textForNote,
     dateCreated: Date.now(),
   };
