@@ -32,6 +32,8 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 // Replace with the name of your local Dynanmodb table name
 const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY";
 
+
+
 let board_id, note_id
 let isNotePresent = false
 const regex = new RegExp('^[a-zA-Z0-9-  ]*$');
@@ -323,7 +325,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
 
   let textForNote = req.body.singleNote;
  
-  switch(typeof textForNote === 'string' && !isEmpty(textForNote)) {
+  switch(typeof textForNote === 'string' ){   //&&!isEmpty(textForNote)) {
     case false:
       errorReturn(400,"Topic for note is invalid", res) 
       return;
@@ -331,9 +333,9 @@ router.post("/board/:BoardId/note", async (req, res) => {
       default:
 
   }
-
+const noteID = req.body.noteId;
   const singleNote = {
-    note_id: uuidv4(),
+    note_id: noteID,
     topic: textForNote,
     dateCreated: Date.now(),
   };
@@ -393,14 +395,14 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
     note_id = req.params.noteId;
   }
-  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id))  //doesn't work
-  {
-    case false:
-      errorReturn(400, "Id isnt valid", res)  //works
-      return;
-    case true:
-      default:
-  }
+  // switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id))  //doesn't work
+  // {
+  //   case false:
+  //     errorReturn(400, "Id isnt valid", res)  //works
+  //     return;
+  //   case true:
+  //     default:
+  // }
 
   let params = {
     TableName: table,
@@ -478,17 +480,18 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
   }
 
-  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
-    case false:
-      errorReturn(400, "Id is not valid", res) //works
-      return;
-    case true:
-    default:
-  }
+  // switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
+  //   case false:
+  //     errorReturn(400, "Id is not valid", res) //works
+  //     return;
+  //   case true:
+  //   default:
+  // }
 
   const textForNote = req.body.singleNote;
 
-  switch (typeof textForNote === "string" && !isEmpty(textForNote)) {
+  switch (typeof textForNote === "string" )//&& !isEmpty(textForNote)) 
+  {
     case false:
       errorReturn(400, "Topic is not valid", res)
     case true:
