@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-Y1EZWONVSUBY";
+const table = "scrumblr-api-1-ScrumblrDB-1S1GHTBQL42S3";
 
 
 
@@ -73,6 +73,21 @@ router.get("/board", async (req, res) => {
 
   let data;
 
+  try {
+    data = await docClient.scan(params).promise();
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
+  res.status(200);
+  res.send(JSON.stringify(data));
+});
+
+router.get("/boards", async (req, res) => {
+  let params = {
+    TableName: table,
+    ProjectionExpression: "BoardName"
+  };
+  let data;
   try {
     data = await docClient.scan(params).promise();
   } catch (error) {
