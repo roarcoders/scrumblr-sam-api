@@ -82,7 +82,7 @@ router.get("/board", async (req, res) => {
   res.send(JSON.stringify(data));
 });
 
-router.get("/boards", async (req, res) => {
+router.get("/board/boardNames", async (req, res) => {
   let params = {
     TableName: table,
     ProjectionExpression: "BoardName"
