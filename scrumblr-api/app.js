@@ -30,14 +30,17 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-zain-ScrumblrDB-19J7V88JU1JDO";
+const table = "scrumblr-api-stack-ScrumblrDB-1MTSEWTF9A069";
+
+
 
 let board_id, note_id
 let isNotePresent = false
 const regex = new RegExp('^[a-zA-Z0-9-  ]*$');
 
 const isNameValid = (strName) => {
-  if(strName.length <= 32 && regex.test(strName)) {
+  if(strName.length <= 32 && regex.test(strName))
+  {
     return true;
   }
   return false;
@@ -45,7 +48,8 @@ const isNameValid = (strName) => {
 
 const isEmpty = (obj) => {
   
-  if(obj == null) {
+  if(obj == null)
+  {
     return false;
   }
   return Object.keys(obj).length === 0;
@@ -78,11 +82,26 @@ router.get("/board", async (req, res) => {
   res.send(JSON.stringify(data));
 });
 
+router.get("/board/boardNames", async (req, res) => {
+  let params = {
+    TableName: table,
+    ProjectionExpression: "BoardName"
+  };
+  let data;
+  try {
+    data = await docClient.scan(params).promise();
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
+  res.status(200);
+  res.send(JSON.stringify(data));
+});
+
 //Get a particular board
 router.get("/board/:BoardId", async (req, res) => {
 
 let board_id
-if (!('BoardId' in req.params)) {
+if (!('BoardId' in req.params)){
     board_id = ""
     errorReturn(404, "BoardId is not present in parameters", res)
     return;
@@ -109,11 +128,12 @@ const tableRows = await docClient.scan(params).promise();
 let board = tableRows.Items.find(board => board.BoardId === board_id)
 
   try {
-    if(board) {
-      let boardJSONString = JSON.stringify(board);
-      console.log(boardJSONString);
-      res.send(JSON.parse(boardJSONString));
-    } else {
+    if(board)
+    {
+    res.send(board);
+    }
+    else
+    {
       errorReturn(404, "Board not found", res)
        return;
     }
@@ -122,25 +142,21 @@ let board = tableRows.Items.find(board => board.BoardId === board_id)
   }
 });
 
+
+
 router.options('*', cors())
 
 
 // Create a new board
 router.post("/board",cors(corsOptions), async (req, res) => {
-
   const boardId = uuidv4();
   let board_name = req.body.BoardName;
-
-  switch (isEmpty(board_name) || !isNameValid(board_name)) {
-    case true:
-      errorReturn(404,"Board Name isn't valid", res)
-      return;
-    case false:
-    default:
+  if(isEmpty(board_name) || !isNameValid(board_name))
+  {
+    errorReturn(404,"Board Name isn't valid", res)
+    return;
   }
-
-  board_name = board_name.trim();
-
+  
   let params = {
     TableName: table,
     Item: {
@@ -172,7 +188,8 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
     board_id = req.params.BoardId
   }
 
-  switch(isIdAlphaNumeric(board_id)) {
+  switch(isIdAlphaNumeric(board_id))
+  {
     case false:
       errorReturn(404, "BoardId isn't valid", res)
       return;
@@ -181,18 +198,8 @@ router.patch("/board/:BoardId",cors(corsOptions), async (req, res) => {
   }
 
   let board_name = req.body.BoardName;
-
-  switch (isEmpty(board_name) || !isNameValid(board_name)) {
-    case true:
-      errorReturn(404,"Board Name isn't valid", res)
-      return;
-    case false:
-    default:
-  }
-
-  board_name = req.body.BoardName.trim();
-
-  switch(typeof board_name === 'string' && !isEmpty(board_name)) {
+  switch(typeof board_name === 'string' && !isEmpty(board_name)) 
+  {
     case false:
       errorReturn(404, "Board name not valid", res)
       return;
@@ -259,7 +266,8 @@ router.delete("/board/:BoardId", async (req, res) => {
     board_id = req.params.BoardId;
   }
 
-  switch(isIdAlphaNumeric(board_id)) {
+  switch(isIdAlphaNumeric(board_id)) // works
+  {
     case false:
       errorReturn(404, "Board Id is not valid", res)
       return;
@@ -273,19 +281,19 @@ router.delete("/board/:BoardId", async (req, res) => {
 
   let boards = await docClient.scan(params).promise();
 
-  switch(boards.Items.length === 0) {
+  switch(boards.Items.length === 0)
+  {
     case true:
       errorReturn(404, "No Boards found in Database", res) //works
       return;
     case false :
     default:
-  }
 
+  }
   let params1;
   let isBoardPresent = false;
-
   for (let board in boards.Items) {
-      if (boards.Items[board].BoardId === board_id) {
+    if (boards.Items[board].BoardId === board_id) {
         isBoardPresent = true;
         params1 = {
           TableName: table,
@@ -293,8 +301,8 @@ router.delete("/board/:BoardId", async (req, res) => {
             BoardId: board_id,
           },
         };
-      }
     }
+  }
 
   try {
     if(isBoardPresent) {
@@ -331,25 +339,18 @@ router.post("/board/:BoardId/note", async (req, res) => {
   }
 
   let textForNote = req.body.singleNote;
-  let noteId = req.body.id
-
-  if (isEmpty(textForNote) || !isNameValid(textForNote)) {
-    errorReturn(404,"Topic of note isn't valid", res)
-    return;
-  }
-
-  textForNote = req.body.singleNote.trim();
  
-  switch(typeof textForNote === 'string' && !isEmpty(textForNote)) {
+  switch(typeof textForNote === 'string' ){   //&&!isEmpty(textForNote)) {
     case false:
       errorReturn(400,"Topic for note is invalid", res) 
       return;
-    case true:
-    default:
-  }
+      case true:
+      default:
 
+  }
+const noteID = req.body.noteId;
   const singleNote = {
-    note_id: noteId,
+    note_id: noteID,
     topic: textForNote,
     dateCreated: Date.now(),
   };
@@ -367,8 +368,7 @@ router.post("/board/:BoardId/note", async (req, res) => {
       case false:
       default:
     }
-  
-  let isBoardPresent = false;
+    let isBoardPresent = false;
   for (let board in boards.Items) {
     if (boards.Items[board].BoardId === board_id) {
       isBoardPresent = true;
@@ -410,14 +410,14 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
     note_id = req.params.noteId;
   }
-
-  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
-    case false:
-      errorReturn(400, "Id isnt valid", res)  //works
-      return;
-    case true:
-    default:
-  }
+  // switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id))  //doesn't work
+  // {
+  //   case false:
+  //     errorReturn(400, "Id isnt valid", res)  //works
+  //     return;
+  //   case true:
+  //     default:
+  // }
 
   let params = {
     TableName: table,
@@ -430,22 +430,22 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
     },
   };
   let board
+try{
+   board = await docClient.query(params).promise();
+}
+catch(err)
+{
+  errorReturn(404, "Board not found", res)  
+  return;
+}
 
-  try {
-    board = await docClient.query(params).promise();
-  }
-  catch(err)
+  switch(isEmpty(board.Items))
   {
-    errorReturn(404, "Board not found", res)  
-    return;
-  }
-
-  switch(isEmpty(board.Items)) {
     case true:
       errorReturn(404, "Board not present in the database", res)  //works
       return;
-    case false:
-    default:
+      case false:
+        default:
   }
 
   let itemsFirstIndex = board.Items.find(Boolean);
@@ -475,9 +475,9 @@ router.delete("/board/:boardId/note/:noteId", async (req, res) => {
       return;
     case true:
     default:
-  }
 
-  try {
+  }
+  try{
     await docClient.update(params1).promise();
     res.send();
   } catch {
@@ -495,27 +495,18 @@ router.patch("/board/:boardId/note/:noteId", async (req, res) => {
     board_id = req.params.boardId;
   }
 
-  switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
-    case false:
-      errorReturn(400, "Id is not valid", res) //works
-      return;
-    case true:
-    default:
-  }
+  // switch(isIdAlphaNumeric(board_id) && isIdAlphaNumeric(note_id)) {
+  //   case false:
+  //     errorReturn(400, "Id is not valid", res) //works
+  //     return;
+  //   case true:
+  //   default:
+  // }
 
-  let textForNote = req.body.singleNote;
+  const textForNote = req.body.singleNote;
 
-  switch (isEmpty(textForNote) || !isNameValid(textForNote)) {
-    case true:
-      errorReturn(404,"Topic of note isn't valid", res)
-      return;
-    case false:
-    default:
-  }
-
-  textForNote = req.body.singleNote.trim();
-
-  switch (typeof textForNote === "string" && !isEmpty(textForNote)) {
+  switch (typeof textForNote === "string" )//&& !isEmpty(textForNote)) 
+  {
     case false:
       errorReturn(400, "Topic is not valid", res)
     case true:
