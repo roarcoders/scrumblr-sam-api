@@ -30,7 +30,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = "scrumblr-api-1-ScrumblrDB-1S1GHTBQL42S3";
+const table = "scrumblr-api-stack-ScrumblrDB-1MTSEWTF9A069";
 
 
 
