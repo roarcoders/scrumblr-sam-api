@@ -142,10 +142,35 @@ let board = tableRows.Items.find(board => board.BoardId === board_id)
   }
 });
 
+router.get("/board/:BoardName", async (req, res) => {
+
+  let board_name;
+  if (!('BoardName' in req.params)) {
+    board_name = ""
+    errorReturn(404, "BoardName is not present in parameters", res)
+    return;
+  }
+  else {
+    board_name = req.params.BoardName;
+  }
+
+  switch(isNameValid(board_name)) {
+    case false:
+      errorReturn(400, "BoardName is not valid", res)
+      return;
+    case true:
+    default:
+  }
+}
+
+
+
+
+
+);
 
 
 router.options('*', cors())
-
 
 // Create a new board
 router.post("/board",cors(corsOptions), async (req, res) => {
