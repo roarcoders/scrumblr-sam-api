@@ -26,7 +26,6 @@ router.use(bodyParser.urlencoded({ extended: true }));
 //   endpoint: "http://localhost:8000",
 // });
 
-
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
@@ -34,7 +33,7 @@ const table = "scrumblr-api-stack-ScrumblrDB-1MTSEWTF9A069";
 
 
 
-let board_id, note_id
+let board_id, note_id, board
 let isNotePresent = false
 const regex = new RegExp('^[a-zA-Z0-9-  ]*$');
 
@@ -125,7 +124,7 @@ let params = {
 
 const tableRows = await docClient.scan(params).promise();
 
-let board = tableRows.Items.find(board => board.BoardId === board_id)
+board = tableRows.Items.find(board => board.BoardId === board_id)
 
   try {
     if(board)
@@ -142,12 +141,13 @@ let board = tableRows.Items.find(board => board.BoardId === board_id)
   }
 });
 
+//get board by name
 router.get("/board/:BoardName", async (req, res) => {
 
   let board_name;
   if (!('BoardName' in req.params)) {
     board_name = ""
-    errorReturn(404, "BoardName is not present in parameters", res)
+    errorReturn(404, "Board name is not present in parameters", res)
     return;
   }
   else {
@@ -156,18 +156,29 @@ router.get("/board/:BoardName", async (req, res) => {
 
   switch(isNameValid(board_name)) {
     case false:
-      errorReturn(400, "BoardName is not valid", res)
+      errorReturn(400, "Board name is invalid", res);
       return;
     case true:
     default:
   }
-}
 
+  let params = {
+    TableName = table,
+    KeyConditionExpression = "BoardName = :boardname",
+    ExpressionAttributeValues = {
+      ":boardname": board_name
+    } 
+  }
 
+  try { 
+    board = await docClient.query(params).promise();
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
 
-
-
-);
+  res.status(200);
+  res.send(board);
+});
 
 
 router.options('*', cors())
