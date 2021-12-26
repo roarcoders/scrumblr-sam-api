@@ -142,12 +142,27 @@ Resources:
       AttributeDefinitions:
         - AttributeName: BoardId
           AttributeType: S
+        - AttributeName: BoardName
+          AttributeType: S
       KeySchema:
         - AttributeName: BoardId
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: BoardNameGSI
+          KeySchema:
+            - AttributeName: BoardName
+              AttributeType: S
+          Projection:
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+          
+              
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
