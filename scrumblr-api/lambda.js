@@ -1,12 +1,10 @@
 // const axios = require('axios')
 // const url = 'http://checkip.amazonaws.com/';
-//let response;
+// let response;
 const awsServerlessExpress = require('@vendia/serverless-express');
 const app = require('./app');
 
-
-exports.handler = awsServerlessExpress({app});
-
+exports.handler = awsServerlessExpress({ app });
 
 // async (event, context) => {
 //     try {

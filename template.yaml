@@ -9,6 +9,9 @@ Description: >
 Globals:
   Function:
     Timeout: 600
+    Environment:
+      Variables:
+        TABLE_NAME: Board
 
 Resources:
   ScrumblrApi:
@@ -139,6 +142,7 @@ Resources:
   ScrumblrDB:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: Board
       AttributeDefinitions:
         - AttributeName: BoardId
           AttributeType: S
@@ -156,7 +160,9 @@ Resources:
             - AttributeName: BoardName
               KeyType: HASH
           Projection:
-            ProjectionType: KEYS_ONLY
+            NonKeyAttributes:
+              - board_notes
+            ProjectionType: INCLUDE
           ProvisionedThroughput:
               ReadCapacityUnits: 5
               WriteCapacityUnits: 5

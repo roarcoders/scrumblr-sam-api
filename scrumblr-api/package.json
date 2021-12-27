@@ -20,9 +20,13 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "test": "mocha tests/unit/"
+    "test": "mocha tests/unit/",
+    "lint": "eslint ../scrumblr-api --ext .js",
+    "lint:fix": "npm run lint -- --fix"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.16.5",
+    "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "mocha": "^8.2.1"
   },
