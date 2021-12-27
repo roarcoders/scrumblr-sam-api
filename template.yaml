@@ -154,12 +154,13 @@ Resources:
         - IndexName: BoardNameGSI
           KeySchema:
             - AttributeName: BoardName
-              AttributeType: S
+              KeyType: HASH
           Projection:
             ProjectionType: KEYS_ONLY
           ProvisionedThroughput:
               ReadCapacityUnits: 5
               WriteCapacityUnits: 5
+              
           
               
 

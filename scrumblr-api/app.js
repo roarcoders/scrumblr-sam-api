@@ -1,13 +1,10 @@
 const express = require('express');
-
 const app = express();
 const router = express.Router();
 // const port = 3000; // Uncomment for testing locally
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
-
 const bodyParser = require('body-parser');
-
 const cors = require('cors');
 
 const corsOptions = {
@@ -30,7 +27,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Replace with the name of your local Dynanmodb table name
-const table = 'scrumblr-api-stack-ScrumblrDB-1MTSEWTF9A069';
+const table = 'scrumblr-api-stack-ScrumblrDB-DI5IMFX3JIBX';
 
 
 
@@ -162,9 +159,7 @@ router.get('/board/:BoardName', async (req, res) => {
 
   const params = {
     TableName: table,
-    Key: {
-      'BoardId': boardName
-    },
+    IndexName: 'BoardNameGSI',
     KeyConditionExpression: 'BoardName = :boardname',
     ExpressionAttributeValues: {
       ':boardname': boardName,
@@ -172,7 +167,7 @@ router.get('/board/:BoardName', async (req, res) => {
   };
 
   try {
-    board = await docClient.query(params).promise()
+    board = await docClient.query(params).promise();
   } catch (error) {
     res.send(JSON.stringify(error));
   }
@@ -285,12 +280,12 @@ router.patch('/board/:BoardId', cors(corsOptions), async (req, res) => {
 
     case true:
     default:
-      errorReturn(404, 'Board not found', res)
+      errorReturn(404, 'Board not found', res);
       return;
   }
-})
+});
 
-//Delete a specific board
+// Delete a specific board
 router.delete('/board/:BoardId', async (req, res) => {
   if (!('BoardId' in req.params)) {
     board_id = '';
@@ -355,7 +350,6 @@ router.delete('/board/:BoardId', async (req, res) => {
 
 // Create a note for a specified board
 router.post('/board/:BoardId/note', async (req, res) => {
-
   // convert the below if to switch
   if (!('BoardId' in req.params)) {
     board_id = '';
