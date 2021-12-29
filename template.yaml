@@ -42,6 +42,16 @@ Resources:
       Policies:
         # Give DynamoDB Full Access to your Lambda Function
         - AmazonDynamoDBFullAccess
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: scrumblrWebSocket
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression : \\$default
+  ConnectToWebSocketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scrumblr-api/
 
   # VPC:
   #   Type: AWS::EC2::VPC
@@ -166,6 +176,13 @@ Resources:
           ProvisionedThroughput:
               ReadCapacityUnits: 5
               WriteCapacityUnits: 5
+  WebsocketConnection:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: ConnectionId
+          KeyType: S
+        - AttributeName: Status
               
           
               
