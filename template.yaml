@@ -42,16 +42,92 @@ Resources:
       Policies:
         # Give DynamoDB Full Access to your Lambda Function
         - AmazonDynamoDBFullAccess
+
   WebSocketApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: scrumblrWebSocket
       ProtocolType: WEBSOCKET
-      RouteSelectionExpression : \\$default
-  ConnectToWebSocketFunction:
+      RouteSelectionExpression: $request.body.action
+
+  TestRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      Target: !Sub integrations/${TestLambdaIntegration}
+
+  WebSocketRouteResponse:
+    Type: AWS::ApiGatewayV2::RouteResponse
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteId: !Ref TestRoute
+      RouteResponseKey: $default
+
+  WebSocketConnectHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: scrumblr-api/
+      Handler: onconnect.handler
+      Timeout: 30
+      Runtime: nodejs12.x
+      Policies:
+        - AWSLambda_FullAccess
+        - CloudWatchLogsFullAccess
+        - AmazonAPIGatewayInvokeFullAccess
+        - AmazonAPIGatewayAdministrator
+  ConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+      - WebSocketConnectHandlerFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketConnectHandlerFunction
+      Principal: apigateway.amazonaws.com
+  
+  WebSocketDisconnectHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scrumblr-api/
+      Handler: ondisconnect.handler
+      Timeout: 30
+      Runtime: nodejs12.x
+      Policies:
+        - AWSLambda_FullAccess
+        - CloudWatchLogsFullAccess
+        - AmazonAPIGatewayInvokeFullAccess
+        - AmazonAPIGatewayAdministrator
+  ConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+      - WebSocketDisconnectHandlerFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketDisonnectHandlerFunction
+      Principal: apigateway.amazonaws.com
+
+  TestLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integrations
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Test Lambda integration with webocket api
+      IntegrationType: AWS
+      IntegrationUri:
+        Fn::Sub:
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
+
+    TestLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Test Lambda integration with webocket api
+      IntegrationType: AWS
+      IntegrationUri:
+        Fn::Sub:
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketDisconnectHandlerFunction.Arn}/invocations
+
 
   # VPC:
   #   Type: AWS::EC2::VPC
@@ -149,7 +225,7 @@ Resources:
   #         ToPort: 443
   #         IpProtocol: tcp
 
-  ScrumblrDB:
+  ScrumblrTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: Board
@@ -176,17 +252,47 @@ Resources:
           ProvisionedThroughput:
               ReadCapacityUnits: 5
               WriteCapacityUnits: 5
-  WebsocketConnection:
+  WebsocketConnectionTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: WSConnection
+      AttributeDefinitions:
+        - AttributeName: ConnectionId
+          AttributeType: S
+        - AttributeName: Status
+          AttributeType: B
       KeySchema:
         - AttributeName: ConnectionId
-          KeyType: S
-        - AttributeName: Status
-              
-          
-              
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: StatusGSI
+          KeySchema:
+            - AttributeName: Status
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn: 
+      - TestRoute
+    Properties:
+      ApiId: !Ref WebSocketApi
 
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref WebSocketApi
+      StageName: prod
+      DeploymentId: !Ref Deployment
+  
+
+  
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
