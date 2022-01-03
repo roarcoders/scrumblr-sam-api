@@ -54,7 +54,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref WebSocketApi
-      RouteKey: $connect
+      RouteKey: test
       Target: !Sub integrations/${TestLambdaIntegration}
 
   WebSocketRouteResponse:
@@ -85,40 +85,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebSocketConnectHandlerFunction
       Principal: apigateway.amazonaws.com
-  
-  WebSocketDisconnectHandlerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: scrumblr-api/
-      Handler: ondisconnect.handler
-      Timeout: 30
-      Runtime: nodejs12.x
-      Policies:
-        - AWSLambda_FullAccess
-        - CloudWatchLogsFullAccess
-        - AmazonAPIGatewayInvokeFullAccess
-        - AmazonAPIGatewayAdministrator
-  ConfigLambdaPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - WebSocketApi
-      - WebSocketDisconnectHandlerFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref WebSocketDisonnectHandlerFunction
-      Principal: apigateway.amazonaws.com
 
   TestLambdaIntegration:
-    Type: AWS::ApiGatewayV2::Integrations
-    Properties:
-      ApiId: !Ref WebSocketApi
-      Description: Test Lambda integration with webocket api
-      IntegrationType: AWS
-      IntegrationUri:
-        Fn::Sub:
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
-
-    TestLambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref WebSocketApi
@@ -126,8 +94,7 @@ Resources:
       IntegrationType: AWS
       IntegrationUri:
         Fn::Sub:
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketDisconnectHandlerFunction.Arn}/invocations
-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
 
   # VPC:
   #   Type: AWS::EC2::VPC
