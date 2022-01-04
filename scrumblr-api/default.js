@@ -8,11 +8,11 @@ function getSocketContext(event) {
     endpoint,
   });
 
-  // const send = async (data) => {
-  //   await apigwManagementApi.postToConnection({ ConnectionId: connectionId, Data: data }).promise();
-  // };
+  const send = async (data) => {
+    await apigwManagementApi.postToConnection({ ConnectionId: connectionId, Data: data }).promise();
+  };
 
-  return { connectionId, endpoint };
+  return { connectionId, endpoint, send };
 }
 
 module.exports.handler = async (event) => {
@@ -20,7 +20,7 @@ module.exports.handler = async (event) => {
 
   const { send } = getSocketContext(event);
 
-  const result = await send(JSON.stringify({ message: 'This response was push from my lambda' }));
+  await send(JSON.stringify({ message: 'This is a message from default.js lambda.' }));
 
   return {
     isBase64Encoded: false,

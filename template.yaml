@@ -54,7 +54,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref WebSocketApi
-      RouteKey: test
+      RouteKey: default
       Target: !Sub integrations/${TestLambdaIntegration}
 
   WebSocketRouteResponse:
@@ -63,6 +63,19 @@ Resources:
       ApiId: !Ref WebSocketApi
       RouteId: !Ref TestRoute
       RouteResponseKey: $default
+
+  DefaultLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scrumblr-api/
+      Handler: default.handler
+      Timeout: 30
+      Runtime: nodejs12.x
+      Policies:
+        - AWSLambda_FullAccess
+        - CloudWatchLogsFullAccess
+        - AmazonAPIGatewayInvokeFullAccess
+        - AmazonAPIGatewayAdministrator
 
   WebSocketConnectHandlerFunction:
     Type: AWS::Serverless::Function
@@ -94,7 +107,7 @@ Resources:
       IntegrationType: AWS
       IntegrationUri:
         Fn::Sub:
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DefaultLambdaFunction.Arn}/invocations
 
   # VPC:
   #   Type: AWS::EC2::VPC
