@@ -76,6 +76,15 @@ Resources:
         - CloudWatchLogsFullAccess
         - AmazonAPIGatewayInvokeFullAccess
         - AmazonAPIGatewayAdministrator
+  ConfigDefaultLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+      - DefaultLambdaFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DefaultLambdaFunction
+      Principal: apigateway.amazonaws.com
 
   WebSocketConnectHandlerFunction:
     Type: AWS::Serverless::Function
