@@ -54,7 +54,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref WebSocketApi
-      RouteKey: default
+      RouteKey: $default
       Target: !Sub integrations/${TestLambdaIntegration}
 
   WebSocketRouteResponse:
