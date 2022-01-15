@@ -51,20 +51,6 @@ Resources:
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: $request.body.action
 
-  TestRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref WebSocketApi
-      RouteKey: $default
-      Target: !Sub integrations/${TestLambdaIntegration}
-
-  WebSocketRouteResponse:
-    Type: AWS::ApiGatewayV2::RouteResponse
-    Properties:
-      ApiId: !Ref WebSocketApi
-      RouteId: !Ref TestRoute
-      RouteResponseKey: $default
-
   DefaultLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -86,7 +72,27 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref DefaultLambdaFunction
       Principal: apigateway.amazonaws.com
-
+      
+  ConnectRoute:
+      Type: AWS::ApiGatewayV2::Route
+      Properties:
+        ApiId: !Ref WebSocketApi
+        RouteKey: $connect
+        AuthorizationType: NONE
+        OperationName: ConnectRoute
+        Target: !Join
+          - '/'
+          - - 'integrations'
+            - !Ref ConnectIntegration
+  ConnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Connect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
   WebSocketConnectHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -94,12 +100,16 @@ Resources:
       Handler: onconnect.handler
       Timeout: 30
       Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WebsocketConnectionTable
       Policies:
         - AWSLambda_FullAccess
         - CloudWatchLogsFullAccess
         - AmazonAPIGatewayInvokeFullAccess
         - AmazonAPIGatewayAdministrator
-  ConfigLambdaPermission:
+        - AmazonDynamoDBFullAccess
+  WebsocketConnectLambdaPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - WebSocketApi
@@ -108,15 +118,6 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebSocketConnectHandlerFunction
       Principal: apigateway.amazonaws.com
-
-  TestLambdaIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref WebSocketApi
-      Description: Test Lambda integration with webocket api
-      IntegrationType: AWS
-      IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DefaultLambdaFunction.Arn}/invocations
 
   # VPC:
   #   Type: AWS::EC2::VPC
@@ -269,7 +270,7 @@ Resources:
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-      - TestRoute
+      - ConnectRoute
     Properties:
       ApiId: !Ref WebSocketApi
 
