@@ -72,27 +72,26 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref DefaultLambdaFunction
       Principal: apigateway.amazonaws.com
-      
+
   ConnectRoute:
-      Type: AWS::ApiGatewayV2::Route
-      Properties:
-        ApiId: !Ref WebSocketApi
-        RouteKey: $connect
-        AuthorizationType: NONE
-        OperationName: ConnectRoute
-        Target: !Join
-          - '/'
-          - - 'integrations'
-            - !Ref ConnectIntegration
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      AuthorizationType: NONE
+      OperationName: ConnectRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ConnectIntegration
   ConnectIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref WebSocketApi
       Description: Connect Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
-        Fn::Sub:
-            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketConnectHandlerFunction.Arn}/invocations
   WebSocketConnectHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -118,6 +117,50 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebSocketConnectHandlerFunction
       Principal: apigateway.amazonaws.com
+  WebSocketDisconnectHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scrumblr-api/
+      Handler: ondisconnect.handler
+      Timeout: 30
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WebsocketConnectionTable
+      Policies:
+        - AWSLambda_FullAccess
+        - CloudWatchLogsFullAccess
+        - AmazonAPIGatewayInvokeFullAccess
+        - AmazonAPIGatewayAdministrator
+        - AmazonDynamoDBFullAccess
+  WebsocketDisconnectLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+      - WebSocketDisconnectHandlerFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketDisconnectHandlerFunction
+      Principal: apigateway.amazonaws.com
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      OperationName: DisconnectRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref DisconnectIntegration
+  DisconnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Disconnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketDisconnectHandlerFunction.Arn}/invocations
 
   # VPC:
   #   Type: AWS::EC2::VPC
@@ -271,6 +314,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - ConnectRoute
+      - DisconnectRoute
     Properties:
       ApiId: !Ref WebSocketApi
 
