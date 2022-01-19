@@ -39,9 +39,7 @@ Resources:
             RestApiId: !Ref ScrumblrApi
             Path: '/{proxy+}'
             Method: ANY
-
       Policies:
-        # Give DynamoDB Full Access to your Lambda Function
         - AmazonDynamoDBFullAccess
 
   WebSocketApi:
@@ -117,31 +115,6 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebSocketConnectHandlerFunction
       Principal: apigateway.amazonaws.com
-  WebSocketDisconnectHandlerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: scrumblr-api/
-      Handler: ondisconnect.handler
-      Timeout: 30
-      Runtime: nodejs12.x
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref WebsocketConnectionTable
-      Policies:
-        - AWSLambda_FullAccess
-        - CloudWatchLogsFullAccess
-        - AmazonAPIGatewayInvokeFullAccess
-        - AmazonAPIGatewayAdministrator
-        - AmazonDynamoDBFullAccess
-  WebsocketDisconnectLambdaPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - WebSocketApi
-      - WebSocketDisconnectHandlerFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref WebSocketDisconnectHandlerFunction
-      Principal: apigateway.amazonaws.com
   DisconnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -159,8 +132,31 @@ Resources:
       ApiId: !Ref WebSocketApi
       Description: Disconnect Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketDisconnectHandlerFunction.Arn}/invocations
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketDisconnectHandlerFunction.Arn}/invocations
+  WebSocketDisconnectHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scrumblr-api/
+      Handler: ondisconnect.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WebsocketConnectionTable
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref WebsocketConnectionTable
+  WebsocketDisconnectLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+      - WebSocketDisconnectHandlerFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketDisconnectHandlerFunction
+      Principal: apigateway.amazonaws.com
 
   # VPC:
   #   Type: AWS::EC2::VPC

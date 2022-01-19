@@ -4,7 +4,7 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 module.exports.handler = async (event) => {
   const data = {
     TableName: process.env.TABLE_WEBSOCKET,
-    Item: {
+    Key: {
       ConnectionId: event.requestContext.connectionId,
     },
   };
