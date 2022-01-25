@@ -49,7 +49,7 @@ Resources:
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: $request.body.action
 
-  DefaultLambdaFunction:
+  DefaultFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: scrumblr-api/
@@ -61,15 +61,35 @@ Resources:
         - CloudWatchLogsFullAccess
         - AmazonAPIGatewayInvokeFullAccess
         - AmazonAPIGatewayAdministrator
-  ConfigDefaultLambdaPermission:
+  DefaultLambdaPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - WebSocketApi
-      - DefaultLambdaFunction
+      - DefaultFunction
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref DefaultLambdaFunction
+      FunctionName: !Ref DefaultFunction
       Principal: apigateway.amazonaws.com
+
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $default
+      AuthorizationType: NONE
+      OperationName: DefaultRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref DefaultIntegration
+  DefaultIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: Default Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DefaultFunction.Arn}/invocations
 
   ConnectRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -311,6 +331,7 @@ Resources:
     DependsOn:
       - ConnectRoute
       - DisconnectRoute
+      - DefaultRoute
     Properties:
       ApiId: !Ref WebSocketApi
 
@@ -320,6 +341,12 @@ Resources:
       ApiId: !Ref WebSocketApi
       StageName: prod
       DeploymentId: !Ref Deployment
+  
+  ScrumblrFrontend:
+    Type: AWS::S3::Bucket
+    Description: Creating Amazon S3 bucket from CloudFormation
+    Properties:
+      BucketName: scrumblr-frontend
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

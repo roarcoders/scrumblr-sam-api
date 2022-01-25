@@ -20,5 +20,7 @@ module.exports.handler = async (event) => {
 
   const { send } = getSocketContext(event);
 
-  await send(JSON.stringify({ message: 'This is a message from default.js lambda.' }));
+  await send(JSON.stringify({ message:  }));
+
+  return { statusCode:200 };
 };
