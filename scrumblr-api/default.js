@@ -1,4 +1,7 @@
 const AWS = require('aws-sdk');
+const docClient = new AWS.DynamoDB.DocumentClient();
+const TABLE_WEBSOCKET = process.env.TABLE_WEBSOCKET;
+// save a card to the board -> event send message to the aws websocket default route
 
 function getSocketContext(event) {
   const { domainName, stage, connectionId } = event.requestContext;
@@ -17,8 +20,23 @@ function getSocketContext(event) {
 
 module.exports.handler = async (event) => {
   console.log(JSON.stringify(event, 2));
+  const params = {
+    RequestItems: {
+      TABLE_WEBSOCKET: {
+        Keys: [
+          { KEY_NAME: { N: 'KEY_VALUE_1' } },
+          { KEY_NAME: { N: 'KEY_VALUE_2' } },
+          { KEY_NAME: { N: 'KEY_VALUE_3' } },
+        ],
+        ProjectionExpression: 'KEY_NAME, ATTRIBUTE',
+      },
+    },
+  };
 
-  const { send } = getSocketContext(event);
+  // TODO - maybe not batchGetItem but query instead if doesn't work
+  const connectionIds = docClient.batchGetItem();
+
+  const { send } = getSocketContext();
 
   await send(JSON.stringify({ message: 'This is a message from default.js lambda.' }));
 };
