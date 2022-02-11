@@ -1,44 +1,97 @@
+/* eslint-disable */
 const AWS = require('aws-sdk');
-const docClient = new AWS.DynamoDB.DocumentClient();
 const TABLE_WEBSOCKET = process.env.TABLE_WEBSOCKET;
-// save a card to the board -> event send message to the aws websocket default route
 
-function getSocketContext(event) {
-  const { domainName, stage, connectionId } = event.requestContext;
-  const endpoint = `${domainName}/${stage}`;
-  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-    apiVersion: '2018-11-29',
-    endpoint,
-  });
+// AWS.config.update({ region: 'ap-southeast-2' });
+const docClient = new AWS.DynamoDB.DocumentClient();
 
-  const send = async (data) => {
-    await apigwManagementApi.postToConnection({ ConnectionId: connectionId, Data: data }).promise();
-  };
+/**
+ * @typedef {AWS.DynamoDB.DocumentClient.ScanInput} ScanInput
+ * @type {ScanInput}
+ */
+const params = {
+  TableName: TABLE_WEBSOCKET,
+};
 
-  return { connectionId, endpoint, send };
+/**
+ * @param {ScanInput} params valid aws query input parameters
+ * @param {string?} attrName the attribute name for the connectionIds
+ * @returns {string[]} - the connectionIds in the board
+ */
+async function getConnectionIds(params, attrName = '') {
+  return await docClient
+    .scan(params)
+    .promise()
+    .then((res) => {
+      /**
+       * @typedef {{ConnectionId: string}} Item
+       * @type {Item[]}
+       */
+      const items = res.Items;
+      const connectionIds = items.map((item) => item.ConnectionId);
+      console.log(JSON.stringify(connectionIds, null, 2));
+      return connectionIds;
+    })
+    .catch((err) => {
+      console.error(err.message);
+      return [];
+    });
 }
 
-module.exports.handler = async (event) => {
-  console.log(JSON.stringify(event, 2));
-  const params = {
-    RequestItems: {
-      TABLE_WEBSOCKET: {
-        Keys: [
-          { KEY_NAME: { N: 'KEY_VALUE_1' } },
-          { KEY_NAME: { N: 'KEY_VALUE_2' } },
-          { KEY_NAME: { N: 'KEY_VALUE_3' } },
-        ],
-        ProjectionExpression: 'KEY_NAME, ATTRIBUTE',
-      },
-    },
+/**
+ * @param {AWS.ApiGatewayManagementApi} apiGateway
+ */
+function broadMessageToConnections(apiGateway) {
+  /**
+   * @async
+   * @param {string[]} connectionIds
+   * @param {object} message
+   */
+  return async function send(connectionIds, message) {
+    return await Promise.allSettled(
+      connectionIds.map(async (connectionId) =>
+        apiGateway.postToConnection({ ConnectionId: connectionId, Data: JSON.stringify(message) }).promise()
+      )
+    );
   };
+}
 
-  // TODO - maybe not batchGetItem but query instead if doesn't work
-  const connectionIds = docClient.batchGetItem();
+/**
+ *
+ * @param {Event} event
+ * @returns
+ */
+function createNewApiGateway(event) {
+  const { domainName, stage } = event.requestContext;
+  const endpoint = `${domainName}/${stage}`;
+  const apiGateway = new AWS.ApiGatewayManagementApi({ endpoint });
+  return apiGateway;
+}
 
-  const { send } = getSocketContext();
-
-  await send(JSON.stringify({ message: 'Message From Default Lambda!' }));
-
-  return { statusCode: 200 };
+/**
+ * @typedef {{message: string}} EventBody
+ * @typedef {string} Body
+ * @typedef {{domainName: string, stage: string, connectionId: string}} RequestContext
+ * @typedef {{requestContext: RequestContext, body: Body }} Event
+ * @param {Event} event
+ */
+module.exports.handler = async (event) => {
+  console.log(JSON.stringify(event, null, 2));
+  /** @type {EventBody} body */
+  const { message = 'custom message goes here: remove me later' } = JSON.parse(event.body);
+  if (!message) {
+    return {
+      statusCode: 418,
+      body: JSON.stringify({ message: 'I am a little tea-pot' }),
+    };
+  }
+  const connectionIds = await getConnectionIds(params);
+  const filteredIds = connectionIds.filter((id) => id !== event.requestContext.connectionId);
+  const send = broadMessageToConnections(createNewApiGateway(event));
+  const res = await send(filteredIds, message);
+  console.log(JSON.stringify(res, null, 2));
+  return {
+    statusCode: 200,
+    body: null,
+  };
 };
