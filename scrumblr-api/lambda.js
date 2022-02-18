@@ -3,7 +3,6 @@
 // let response;
 const awsServerlessExpress = require('@vendia/serverless-express');
 const app = require('./app');
-
 exports.handler = awsServerlessExpress({ app });
 
 // async (event, context) => {

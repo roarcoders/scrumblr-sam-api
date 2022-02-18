@@ -260,7 +260,7 @@ router.post('/board', cors(corsOptions), async (req, res) => {
     };
     res.send(boardIdObj);
   } catch (error) {
-    res.send(JSON.stringify(error.message));
+    res.send(JSON.stringify(error));
   }
 });
 
