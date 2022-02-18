@@ -26,7 +26,7 @@ Resources:
     Properties:
       CodeUri: scrumblr-api/
       Handler: lambda.handler
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       # VpcConfig:
       #   SubnetIds:
       #     - !Ref LambdaSubnet
@@ -52,10 +52,10 @@ Resources:
   DefaultFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: scrumblr-api/
+      CodeUri: websockets/default
       Handler: default.handler
       Timeout: 30
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Policies:
         - AWSLambda_FullAccess
         - CloudWatchLogsFullAccess
@@ -114,10 +114,10 @@ Resources:
   WebSocketConnectHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: scrumblr-api/
+      CodeUri: websockets/onconnect
       Handler: onconnect.handler
       Timeout: 30
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Environment:
         Variables:
           TABLE_NAME: !Ref WebsocketConnectionTable
@@ -158,10 +158,10 @@ Resources:
   WebSocketDisconnectHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: scrumblr-api/
+      CodeUri: websockets/ondisconnect
       Handler: ondisconnect.handler
       MemorySize: 256
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Environment:
         Variables:
           TABLE_NAME: !Ref WebsocketConnectionTable
