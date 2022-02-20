@@ -417,9 +417,9 @@ router.post('/board/:BoardId/note', async (req, res) => {
   }
 
   /** @type {Note} */
-  const textForNote = req.body.singleNote;
+  const noteData = req.body.singleNote;
 
-  switch (isValidNote(textForNote)) {
+  switch (isValidNote(noteData)) {
     // typeof textForNote === 'string' // &&!isEmpty(textForNote)) {
     case false:
       errorReturn(400, 'Topic for note is invalid', res);
@@ -430,7 +430,7 @@ router.post('/board/:BoardId/note', async (req, res) => {
   noteID = req.body.noteId;
   const singleNote = {
     note_id: noteID,
-    topic: textForNote,
+    topic: noteData,
     dateCreated: Date.now(),
   };
 
