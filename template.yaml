@@ -11,7 +11,7 @@ Globals:
     Timeout: 600
     Environment:
       Variables:
-        TABLE_NAME: Board
+        TABLE_BOARD: Board
         TABLE_WEBSOCKET: WebsocketConnections
         INDEX_BOARDID_CONNECTIONS: Sort-BoardId-ConnectionId-GSI
 
@@ -121,7 +121,9 @@ Resources:
       Runtime: nodejs14.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref WebSocketConnectTable
+          TABLE_BOARD: Board
+          TABLE_WEBSOCKET: WebsocketConnections
+          INDEX_BOARDID_CONNECTIONS: Sort-BoardId-ConnectionId-GSI
       Policies:
         - AWSLambda_FullAccess
         - CloudWatchLogsFullAccess
@@ -165,7 +167,9 @@ Resources:
       Runtime: nodejs14.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref WebSocketConnectTable
+          TABLE_BOARD: Board
+          TABLE_WEBSOCKET: WebsocketConnections
+          INDEX_BOARDID_CONNECTIONS: Sort-BoardId-ConnectionId-GSI
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref WebSocketConnectTable

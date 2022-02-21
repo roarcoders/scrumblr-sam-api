@@ -1,5 +1,8 @@
 const AWS = require('aws-sdk');
 
+const TABLE_BOARD = process.env.TABLE_BOARD;
+const TABLE_WEBSOCKET = process.env.TABLE_WEBSOCKET;
+
 /** FOR LOCAL TESTING */
 if (process.env.NODE_ENV === 'development') {
   console.log('-----> running in developement mode...');
@@ -42,7 +45,7 @@ module.exports.handler = async (event) => {
   try {
     /** @type {AWS.DynamoDB.DocumentClient.GetItemInput} */
     const paramBoard = {
-      TableName: process.env.TABLE_NAME,
+      TableName: TABLE_BOARD,
       Key: { BoardId: boardId },
     };
     const board = await docClient
@@ -50,11 +53,11 @@ module.exports.handler = async (event) => {
       .promise()
       .catch((error) => console.error(JSON.stringify(error, null, 2), '----> Error'));
 
-    if (!board.Item) throw Error('That Board Id Was Not Found');
+    if (!board?.Item) throw Error('That Board Id Was Not Found');
 
     /** @type {AWS.DynamoDB.DocumentClient.PutItemInput} */
     const data = {
-      TableName: process.env.TABLE_WEBSOCKET,
+      TableName: TABLE_WEBSOCKET,
       Item: {
         BoardId: boardId,
         ConnectionId: event.requestContext.connectionId,

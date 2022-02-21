@@ -40,7 +40,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // eslint-disable-next-line prefer-destructuring
-const TABLE_NAME = process.env.TABLE_NAME;
+const TABLE_BOARD = process.env.TABLE_BOARD;
 const regex = new RegExp('^[a-zA-Z0-9-  ]*$');
 
 let boardID;
@@ -123,7 +123,7 @@ const isIdAlphaNumeric = (testBoardId) => regex.test(testBoardId) && testBoardId
 // List all boards in memory(array)
 router.get('/board', async (req, res) => {
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
   };
 
   let data;
@@ -139,7 +139,7 @@ router.get('/board', async (req, res) => {
 
 router.get('/board/boardNames', async (req, res) => {
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     ProjectionExpression: 'BoardName',
   };
   let data;
@@ -215,7 +215,7 @@ router.get('/board/:BoardName', async (req, res) => {
   }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     IndexName: 'BoardNameGSI',
     KeyConditionExpression: 'BoardName = :boardname',
     ExpressionAttributeValues: {
@@ -245,7 +245,7 @@ router.post('/board', cors(corsOptions), async (req, res) => {
   }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     Item: {
       BoardId: boardId,
       BoardName: boardName,
@@ -300,7 +300,7 @@ router.patch('/board/:BoardId', cors(corsOptions), async (req, res) => {
   }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     Key: {
       BoardId: boardID,
     },
@@ -316,7 +316,7 @@ router.patch('/board/:BoardId', cors(corsOptions), async (req, res) => {
     case false:
       {
         const params1 = {
-          TableName: TABLE_NAME,
+          TableName: TABLE_BOARD,
           Key: {
             BoardId: boardID,
           },
@@ -358,7 +358,7 @@ router.delete('/board/:BoardId', async (req, res) => {
   }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
   };
 
   const boards = await docClient.scan(params).promise();
@@ -377,7 +377,7 @@ router.delete('/board/:BoardId', async (req, res) => {
     if (boards.Items[board].BoardId === boardID) {
       isBoardPresent = true;
       params1 = {
-        TableName: TABLE_NAME,
+        TableName: TABLE_BOARD,
         Key: {
           BoardId: boardID,
         },
@@ -435,7 +435,7 @@ router.post('/board/:BoardId/note', async (req, res) => {
   };
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
   };
 
   const boards = await docClient.scan(params).promise();
@@ -452,7 +452,7 @@ router.post('/board/:BoardId/note', async (req, res) => {
     if (boards.Items[board].BoardId === boardID) {
       isBoardPresent = true;
       const updateBoard = {
-        TableName: TABLE_NAME,
+        TableName: TABLE_BOARD,
         Key: {
           BoardId: boardID,
         },
@@ -498,7 +498,7 @@ router.delete('/board/:boardId/note/:noteId', async (req, res) => {
   // }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     Key: {
       BoardId: boardID,
     },
@@ -532,7 +532,7 @@ router.delete('/board/:boardId/note/:noteId', async (req, res) => {
       itemsFirstIndex.board_notes.splice(note, 1);
 
       params1 = {
-        TableName: TABLE_NAME,
+        TableName: TABLE_BOARD,
         Key: {
           BoardId: boardID,
         },
@@ -589,7 +589,7 @@ router.patch('/board/:boardId/note/:noteId', async (req, res) => {
   }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     KeyConditionExpression: 'BoardId = :boardId',
     ExpressionAttributeValues: {
       ':boardId': boardID,
@@ -616,7 +616,7 @@ router.patch('/board/:boardId/note/:noteId', async (req, res) => {
 
   /** @type {AWS.DynamoDB.DocumentClient.UpdateItemInput} */
   const updateNoteParams = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     Key: {
       BoardId: boardID,
     },
@@ -682,7 +682,7 @@ router.get('/board/:boardId/note/:noteId', async (req, res) => {
   }
 
   const params = {
-    TableName: TABLE_NAME,
+    TableName: TABLE_BOARD,
     KeyConditionExpression: 'BoardId = :boardId',
     ExpressionAttributeValues: {
       ':boardId': boardID,
