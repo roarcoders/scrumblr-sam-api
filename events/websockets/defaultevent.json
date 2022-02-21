@@ -1,0 +1,23 @@
+{
+  "requestContext": {
+    "routeKey": "$default",
+    "messageId": "N4eb_eD_ywMCIGg=",
+    "eventType": "MESSAGE",
+    "extendedRequestId": "N4ecAHQBSwMF0Hg=",
+    "requestTime": "21/Feb/2022:07:50:36 +0000",
+    "messageDirection": "IN",
+    "stage": "prod",
+    "connectedAt": 1645429577114,
+    "requestTimeEpoch": 1645429836602,
+    "identity": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+      "sourceIp": "180.249.184.231"
+    },
+    "requestId": "N4ecAHQBSwMF0Hg=",
+    "domainName": "n4f51sq0t1.execute-api.ap-southeast-2.amazonaws.com",
+    "connectionId": "N4fMsc3RSwMAcTw=",
+    "apiId": "n4f51sq0t1"
+  },
+  "body": "{\"action\": \"default\", \"message\": \"hi from local dev vs code\", \"boardId\": \"f992080c-e2b1-4959-a617-267b3686497f\"}",
+  "isBase64Encoded": false
+}
