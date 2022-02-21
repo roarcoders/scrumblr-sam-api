@@ -12,7 +12,8 @@ Globals:
     Environment:
       Variables:
         TABLE_NAME: Board
-        TABLE_WEBSOCKET: WSConnection
+        TABLE_WEBSOCKET: WebsocketConnections
+        INDEX_BOARDID_CONNECTIONS: Sort-BoardId-ConnectionId-GSI
 
 Resources:
   ScrumblrApi:
@@ -120,7 +121,7 @@ Resources:
       Runtime: nodejs14.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref WebsocketConnectionTable
+          TABLE_NAME: !Ref WebSocketConnectTable
       Policies:
         - AWSLambda_FullAccess
         - CloudWatchLogsFullAccess
@@ -164,10 +165,10 @@ Resources:
       Runtime: nodejs14.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref WebsocketConnectionTable
+          TABLE_NAME: !Ref WebSocketConnectTable
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref WebsocketConnectionTable
+            TableName: !Ref WebSocketConnectTable
   WebsocketDisconnectLambdaPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -301,31 +302,34 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
-  WebsocketConnectionTable:
+  WebSocketConnectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: WSConnection
+      TableName: WebsocketConnections
       AttributeDefinitions:
         - AttributeName: ConnectionId
           AttributeType: S
-        - AttributeName: Status
-          AttributeType: B
+        - AttributeName: BoardId
+          AttributeType: S
       KeySchema:
         - AttributeName: ConnectionId
           KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: TimeToLive
+        Enabled: true
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
       GlobalSecondaryIndexes:
-        - IndexName: StatusGSI
+        - IndexName: Sort-BoardId-ConnectionId-GSI
           KeySchema:
-            - AttributeName: Status
+            - AttributeName: BoardId
               KeyType: HASH
           Projection:
             ProjectionType: KEYS_ONLY
           ProvisionedThroughput:
-            ReadCapacityUnits: 5
-            WriteCapacityUnits: 5
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
