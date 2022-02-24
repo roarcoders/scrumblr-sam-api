@@ -1,10 +1,12 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const router = express.Router();
 // const port = 3000; // Uncomment for testing locally
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
+const saltRounds = 10;
 
 /** FOR LOCAL TESTING */
 if (process.env.NODE_ENV === 'development') {
@@ -47,6 +49,8 @@ let boardID;
 let noteID;
 let board;
 let boardName;
+let passCode;
+let hashedPassCode;
 let isNotePresent = false;
 
 const isNameValid = (strName) => {
@@ -239,16 +243,25 @@ router.options('*', cors());
 router.post('/board', cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   boardName = req.body.BoardName;
+  passCode = req.body.Passcode;
+  
   if (isEmpty(boardName) || !isNameValid(boardName)) {
     errorReturn(404, 'Board Name is invalid', res);
     return;
   }
+
+  bcrypt.genSalt(saltRounds, () => {
+    bcrypt.hash(passCode, saltRounds, function(err, hash) {
+
+    })
+  })
 
   const params = {
     TableName: TABLE_BOARD,
     Item: {
       BoardId: boardId,
       BoardName: boardName,
+      Passcode: passCode,
       board_notes: [],
     },
   };
