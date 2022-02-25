@@ -1,5 +1,5 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcryptjs = require('bcryptjs');
 
 const app = express();
 const router = express.Router();
@@ -244,24 +244,23 @@ router.post('/board', cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   boardName = req.body.BoardName;
   passCode = req.body.Passcode;
-  
+
   if (isEmpty(boardName) || !isNameValid(boardName)) {
     errorReturn(404, 'Board Name is invalid', res);
     return;
   }
 
-  bcrypt.genSalt(saltRounds, () => {
-    bcrypt.hash(passCode, saltRounds, function(err, hash) {
-
-    })
-  })
+  bcryptjs.hash(passCode, saltRounds, (err, hash) => {
+    console.log('in bcryptjs hash is = ' + hash + ' passCode is ' + passCode);
+    hashedPassCode = hash;
+  });
 
   const params = {
     TableName: TABLE_BOARD,
     Item: {
       BoardId: boardId,
       BoardName: boardName,
-      Passcode: passCode,
+      Passcode: hashedPassCode,
       board_notes: [],
     },
   };
