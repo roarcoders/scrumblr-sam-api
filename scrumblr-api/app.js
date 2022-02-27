@@ -250,10 +250,7 @@ router.post('/board', cors(corsOptions), async (req, res) => {
     return;
   }
 
-  bcryptjs.hash(passCode, saltRounds, (err, hash) => {
-    console.log('in bcryptjs hash is = ' + hash + ' passCode is ' + passCode);
-    hashedPassCode = hash;
-  });
+  hashedPassCode = await bcryptjs.hash(passCode, saltRounds);
 
   const params = {
     TableName: TABLE_BOARD,
