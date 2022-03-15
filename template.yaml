@@ -302,6 +302,7 @@ Resources:
           Projection:
             NonKeyAttributes:
               - board_notes
+              - Passcode
             ProjectionType: INCLUDE
           ProvisionedThroughput:
             ReadCapacityUnits: 5

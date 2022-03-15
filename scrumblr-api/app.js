@@ -141,6 +141,7 @@ router.get('/board', async (req, res) => {
   res.send(JSON.stringify(data));
 });
 
+// change endpoint name from boardNames to boardNamesAndPasscodes
 router.get('/board/boardNames', async (req, res) => {
   const params = {
     TableName: TABLE_BOARD,
@@ -154,6 +155,35 @@ router.get('/board/boardNames', async (req, res) => {
   }
   res.status(200);
   res.send(JSON.stringify(data));
+});
+
+router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
+  passCode = req.body.Passcode;
+  boardName = req.body.BoardName;
+
+  const params = {
+    TableName: TABLE_BOARD,
+    IndexName: 'BoardNameGSI',
+    KeyConditionExpression: 'BoardName = :boardname',
+    ExpressionAttributeValues: {
+      ':boardname': boardName,
+    },
+  };
+
+  let result;
+  try {
+    board = await docClient.query(params).promise();
+    if (board.Items.length === 0) {
+      result = false;
+    } else {
+      result = await bcryptjs.compare(passCode, board.Items[0].Passcode);
+    }
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
+
+  res.status(200);
+  res.send(result);
 });
 
 // Get a particular board
