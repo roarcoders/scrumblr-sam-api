@@ -157,10 +157,7 @@ router.get('/board/boardNames', async (req, res) => {
   res.send(JSON.stringify(data));
 });
 
-router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
-  passCode = req.body.Passcode;
-  boardName = req.body.BoardName;
-
+async function verifyPinAndBoardName(passCode, boardName) {
   const params = {
     TableName: TABLE_BOARD,
     IndexName: 'BoardNameGSI',
@@ -178,8 +175,20 @@ router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) 
     } else {
       result = await bcryptjs.compare(passCode, board.Items[0].Passcode);
     }
+    return result;
   } catch (error) {
-    res.send(JSON.stringify(error));
+    return error;
+  }
+}
+
+router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
+  passCode = req.body.Passcode;
+  boardName = req.body.BoardName;
+
+  const result = await verifyPinAndBoardName(passCode, boardName);
+
+  if (typeof result !== 'boolean') {
+    res.send(JSON.stringify(result));
   }
 
   res.status(200);
