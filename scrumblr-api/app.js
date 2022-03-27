@@ -180,7 +180,7 @@ async function verifyPinAndBoardName(passCode, boardName) {
     return error;
   }
 }
-
+// come to this after posting all notes functionality is done 
 router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
   passCode = req.body.Passcode;
   boardName = req.body.BoardName;
@@ -447,28 +447,15 @@ router.delete('/board/:BoardId', async (req, res) => {
   }
 });
 
-// Create a note for a specified board
-router.post('/board/:BoardId/note', async (req, res) => {
-  // convert the below if to switch
-  if (!('BoardId' in req.params)) {
-    boardID = '';
-  } else {
-    boardID = req.params.BoardId;
-  }
+async function SaveAllNotes(boardId, boardName, passcode) {
 
-  switch (isIdAlphaNumeric(boardID)) {
-    case false:
-      errorReturn(400, 'Board Id is not valid', res);
-      return;
-    case true:
-    default:
-  }
+}
 
+async function SaveNotesOneByOne(req, res) {
   /** @type {Note} */
   const noteData = req.body.singleNote;
 
   switch (isValidNote(noteData)) {
-    // typeof textForNote === 'string' // &&!isEmpty(textForNote)) {
     case false:
       errorReturn(400, 'Topic for note is invalid', res);
       return;
@@ -484,9 +471,12 @@ router.post('/board/:BoardId/note', async (req, res) => {
 
   const params = {
     TableName: TABLE_BOARD,
+    Key: {
+      BoardId: boardID,
+    },
   };
 
-  const boards = await docClient.scan(params).promise();
+  const boards = await docClient.get(params).promise();
   switch (isEmpty(boards.Items)) {
     case true:
       errorReturn(404, 'No boards found in the database', res);
@@ -495,36 +485,57 @@ router.post('/board/:BoardId/note', async (req, res) => {
     default:
   }
 
-  let isBoardPresent = false;
-  for (const board in boards.Items) {
-    if (boards.Items[board].BoardId === boardID) {
-      isBoardPresent = true;
-      const updateBoard = {
-        TableName: TABLE_BOARD,
-        Key: {
-          BoardId: boardID,
-        },
-        UpdateExpression: 'SET board_notes = list_append(board_notes,:note)',
-        ExpressionAttributeValues: {
-          ':note': [singleNote],
-        },
-      };
-
-      try {
-        await docClient.update(updateBoard).promise();
-        res.send();
-      } catch (error) {
-        res.send(JSON.stringify(error));
-      }
-    }
+  board = boards.Items.find((brd) => brd.BoardId === boardID);
+  if (!board) {
+    // eslint-disable-next-line consistent-return
+    return errorReturn(404, 'Board not found', res);
   }
-  switch (isBoardPresent) {
+
+  const updateBoard = {
+    TableName: TABLE_BOARD,
+    Key: {
+      BoardId: boardID,
+    },
+    UpdateExpression: 'SET board_notes = list_append(board_notes,:note)',
+    ExpressionAttributeValues: {
+      ':note': [singleNote],
+    },
+  };
+
+  try {
+    await docClient.update(updateBoard).promise();
+    res.send();
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
+}
+
+// Create a note for a specified board
+router.post('/board/:BoardId/note', async (req, res) => {
+  // convert the below if to switch
+  if (!('BoardId' in req.params)) {
+    boardID = '';
+  } else {
+    boardID = req.params.BoardId;
+    boardName = req.params.BoardName;
+    passCode = req.params.Passcode;
+  }
+
+  switch (isIdAlphaNumeric(boardID)) {
     case false:
-      errorReturn(404, 'Board not found', res);
-      break;
+      errorReturn(400, 'Board Id is not valid', res);
+      return;
     case true:
     default:
   }
+
+  await SaveAllNotes(boardID, boardName, passCode);
+
+  await SaveNotesOneByOne(boardID, boardName, passCode, noteId, noteData);
+
+  // call save one note function here
+
+  
 });
 
 // Delete a particular note from a particular board
@@ -773,6 +784,10 @@ router.get('/board/:boardId/note/:noteId', async (req, res) => {
     res.send(JSON.stringify(error));
   }
 });
+
+
+
+
 
 app.use('/', router);
 
