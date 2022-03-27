@@ -180,7 +180,7 @@ async function verifyPinAndBoardName(passCode, boardName) {
     return error;
   }
 }
-// come to this after posting all notes functionality is done 
+// come to this after posting all notes functionality is done
 router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
   passCode = req.body.Passcode;
   boardName = req.body.BoardName;
@@ -447,9 +447,7 @@ router.delete('/board/:BoardId', async (req, res) => {
   }
 });
 
-async function SaveAllNotes(boardId, boardName, passcode) {
-
-}
+async function SaveAllNotes(boardId, boardName, passcode) {}
 
 async function SaveNotesOneByOne(req, res) {
   /** @type {Note} */
@@ -476,16 +474,8 @@ async function SaveNotesOneByOne(req, res) {
     },
   };
 
-  const boards = await docClient.get(params).promise();
-  switch (isEmpty(boards.Items)) {
-    case true:
-      errorReturn(404, 'No boards found in the database', res);
-      return;
-    case false:
-    default:
-  }
+  const board = await docClient.get(params).promise();
 
-  board = boards.Items.find((brd) => brd.BoardId === boardID);
   if (!board) {
     // eslint-disable-next-line consistent-return
     return errorReturn(404, 'Board not found', res);
@@ -529,13 +519,9 @@ router.post('/board/:BoardId/note', async (req, res) => {
     default:
   }
 
-  await SaveAllNotes(boardID, boardName, passCode);
+  // await SaveAllNotes(boardID, boardName, passCode);
 
-  await SaveNotesOneByOne(boardID, boardName, passCode, noteId, noteData);
-
-  // call save one note function here
-
-  
+  await SaveNotesOneByOne(req, res);
 });
 
 // Delete a particular note from a particular board
@@ -784,10 +770,6 @@ router.get('/board/:boardId/note/:noteId', async (req, res) => {
     res.send(JSON.stringify(error));
   }
 });
-
-
-
-
 
 app.use('/', router);
 
