@@ -1,0 +1,77 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "name": "OnConnect",
+      "program": "${workspaceFolder}/websockets/onconnect/onconnect.js",
+      "request": "launch",
+      "restart": true,
+      "runtimeExecutable": "nodemon",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "pwa-node",
+      "env": {
+        "TABLE_BOARD": "Board",
+        "TABLE_WEBSOCKET": "WebsocketConnections",
+        "NODE_ENV": "development",
+        "AWS_CLI_PROFILE": "roar-coders-torey"
+      }
+    },
+    {
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "name": "Default Websocket",
+      "program": "${workspaceFolder}/websockets/default/default.js",
+      "request": "launch",
+      "restart": true,
+      "runtimeExecutable": "nodemon",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "pwa-node",
+      "env": {
+        "TABLE_BOARD": "Board",
+        "TABLE_WEBSOCKET": "WebsocketConnections",
+        "NODE_ENV": "development",
+        "AWS_CLI_PROFILE": "roar-coders-torey",
+        "INDEX_BOARDID_CONNECTIONS": "Sort-BoardId-ConnectionId-GSI"
+      }
+    },
+    {
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "name": "OnDisconnect",
+      "program": "${workspaceFolder}/websockets/ondisconnect/ondisconnect.js",
+      "request": "launch",
+      "restart": true,
+      "runtimeExecutable": "nodemon",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "pwa-node",
+      "env": {
+        "TABLE_BOARD": "Board",
+        "TABLE_WEBSOCKET": "WebsocketConnections",
+        "NODE_ENV": "development",
+        "AWS_CLI_PROFILE": "roar-coders-torey"
+      }
+    },
+
+    {
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "name": "Run App",
+      "program": "${workspaceFolder}/scrumblr-api/lambda.js",
+      "request": "launch",
+      "restart": true,
+      "runtimeExecutable": "nodemon",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "pwa-node",
+      "env": {
+        "NODE_ENV": "development",
+        "AWS_CLI_PROFILE": "roar-coders-torey",
+        "TABLE_BOARD": "Board"
+      }
+    }
+  ]
+}
