@@ -1,10 +1,12 @@
 const express = require('express');
+const bcryptjs = require('bcryptjs');
 
 const app = express();
 const router = express.Router();
 // const port = 3000; // Uncomment for testing locally
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
+const saltRounds = 10;
 
 /** FOR LOCAL TESTING */
 if (process.env.NODE_ENV === 'development') {
@@ -47,6 +49,8 @@ let boardID;
 let noteID;
 let board;
 let boardName;
+let passCode;
+let hashedPassCode;
 let isNotePresent = false;
 
 const isNameValid = (strName) => {
@@ -137,6 +141,7 @@ router.get('/board', async (req, res) => {
   res.send(JSON.stringify(data));
 });
 
+// change endpoint name from boardNames to boardNamesAndPasscodes
 router.get('/board/boardNames', async (req, res) => {
   const params = {
     TableName: TABLE_BOARD,
@@ -150,6 +155,44 @@ router.get('/board/boardNames', async (req, res) => {
   }
   res.status(200);
   res.send(JSON.stringify(data));
+});
+
+async function verifyPinAndBoardName(passCode, boardName) {
+  const params = {
+    TableName: TABLE_BOARD,
+    IndexName: 'BoardNameGSI',
+    KeyConditionExpression: 'BoardName = :boardname',
+    ExpressionAttributeValues: {
+      ':boardname': boardName,
+    },
+  };
+
+  let result;
+  try {
+    board = await docClient.query(params).promise();
+    if (board.Items.length === 0) {
+      result = false;
+    } else {
+      result = await bcryptjs.compare(passCode, board.Items[0].Passcode);
+    }
+    return result;
+  } catch (error) {
+    return error;
+  }
+}
+
+router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
+  passCode = req.body.Passcode;
+  boardName = req.body.BoardName;
+
+  const result = await verifyPinAndBoardName(passCode, boardName);
+
+  if (typeof result !== 'boolean') {
+    res.send(JSON.stringify(result));
+  }
+
+  res.status(200);
+  res.send(result);
 });
 
 // Get a particular board
@@ -239,16 +282,21 @@ router.options('*', cors());
 router.post('/board', cors(corsOptions), async (req, res) => {
   const boardId = uuidv4();
   boardName = req.body.BoardName;
+  passCode = req.body.Passcode;
+
   if (isEmpty(boardName) || !isNameValid(boardName)) {
     errorReturn(404, 'Board Name is invalid', res);
     return;
   }
+
+  hashedPassCode = await bcryptjs.hash(passCode, saltRounds);
 
   const params = {
     TableName: TABLE_BOARD,
     Item: {
       BoardId: boardId,
       BoardName: boardName,
+      Passcode: hashedPassCode,
       board_notes: [],
     },
   };
