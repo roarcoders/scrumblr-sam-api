@@ -52,6 +52,7 @@ let boardName;
 let passCode;
 let hashedPassCode;
 let isNotePresent = false;
+let board_columns;
 
 const isNameValid = (strName) => {
   if (strName.length <= 32 && regex.test(strName)) {
@@ -447,8 +448,6 @@ router.delete('/board/:BoardId', async (req, res) => {
   }
 });
 
-async function SaveAllNotes(boardId, boardName, passcode) {}
-
 async function SaveNotesOneByOne(req, res) {
   /** @type {Note} */
   const noteData = req.body.singleNote;
@@ -474,7 +473,7 @@ async function SaveNotesOneByOne(req, res) {
     },
   };
 
-  const board = await docClient.get(params).promise();
+  board = await docClient.get(params).promise();
 
   if (!board) {
     // eslint-disable-next-line consistent-return
@@ -509,6 +508,7 @@ router.post('/board/:BoardId/note', async (req, res) => {
     boardID = req.params.BoardId;
     boardName = req.params.BoardName;
     passCode = req.params.Passcode;
+
   }
 
   switch (isIdAlphaNumeric(boardID)) {
