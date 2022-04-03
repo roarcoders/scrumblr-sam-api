@@ -52,7 +52,7 @@ let boardName;
 let passCode;
 let hashedPassCode;
 let isNotePresent = false;
-let board_columns;
+let boardColumns = [];
 
 const isNameValid = (strName) => {
   if (strName.length <= 32 && regex.test(strName)) {
@@ -298,6 +298,7 @@ router.post('/board', cors(corsOptions), async (req, res) => {
       BoardId: boardId,
       BoardName: boardName,
       Passcode: hashedPassCode,
+      BoardColumns: [], // board column to be passes from frontend
       board_notes: [],
     },
   };
