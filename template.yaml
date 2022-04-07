@@ -303,6 +303,7 @@ Resources:
             NonKeyAttributes:
               - board_notes
               - Passcode
+              - ColumnNames
             ProjectionType: INCLUDE
           ProvisionedThroughput:
             ReadCapacityUnits: 5

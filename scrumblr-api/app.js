@@ -52,7 +52,7 @@ let boardName;
 let passCode;
 let hashedPassCode;
 let isNotePresent = false;
-let boardColumns = [];
+let boardColumns;
 
 const isNameValid = (strName) => {
   if (strName.length <= 32 && regex.test(strName)) {
@@ -298,7 +298,7 @@ router.post('/board', cors(corsOptions), async (req, res) => {
       BoardId: boardId,
       BoardName: boardName,
       Passcode: hashedPassCode,
-      BoardColumns: [], // board column to be passes from frontend
+      ColumnNames: [],
       board_notes: [],
     },
   };
@@ -500,6 +500,59 @@ async function SaveNotesOneByOne(req, res) {
   }
 }
 
+router.patch('/board/:BoardId/columns', async (req, res) => {
+  // convert the below if to switch
+  if (!('BoardId' in req.params)) {
+    boardID = '';
+  } else {
+    boardID = req.params.BoardId;
+  }
+
+  switch (isIdAlphaNumeric(boardID)) {
+    case false:
+      errorReturn(400, 'Board Id is not valid', res);
+      return;
+    case true:
+    default:
+  }
+
+  const params = {
+    TableName: TABLE_BOARD,
+    Key: {
+      BoardId: boardID,
+    },
+  };
+  board = await docClient.get(params).promise();
+
+  switch (isEmpty(board.Items)) {
+    case true:
+      errorReturn(404, 'Board not present in the database', res);
+      return;
+    case false:
+    default:
+  }
+
+  boardColumns = req.body.Columns;
+
+  const updateBoard = {
+    TableName: TABLE_BOARD,
+    Key: {
+      BoardId: boardID,
+    },
+    UpdateExpression: 'SET ColumnNames = list_append(ColumnNames,:colColumnName)',
+    ExpressionAttributeValues: {
+      ':colColumnName': [boardColumns],
+    },
+  };
+
+  try {
+    await docClient.update(updateBoard).promise();
+    res.send(200);
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
+});
+
 // Create a note for a specified board
 router.post('/board/:BoardId/note', async (req, res) => {
   // convert the below if to switch
@@ -509,8 +562,7 @@ router.post('/board/:BoardId/note', async (req, res) => {
     boardID = req.params.BoardId;
     boardName = req.params.BoardName;
     passCode = req.params.Passcode;
-
-  }
+}
 
   switch (isIdAlphaNumeric(boardID)) {
     case false:
