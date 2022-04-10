@@ -52,7 +52,7 @@ let boardName;
 let passCode;
 let hashedPassCode;
 let isNotePresent = false;
-let boardColumns;
+let boardColumns = [];
 
 const isNameValid = (strName) => {
   if (strName.length <= 32 && regex.test(strName)) {
@@ -181,7 +181,7 @@ async function verifyPinAndBoardName(passCode, boardName) {
     return error;
   }
 }
-// come to this after posting all notes functionality is done
+
 router.post('/board/verifyPinAndBoardName', cors(corsOptions), async (req, res) => {
   passCode = req.body.Passcode;
   boardName = req.body.BoardName;
@@ -539,9 +539,9 @@ router.patch('/board/:BoardId/columns', async (req, res) => {
     Key: {
       BoardId: boardID,
     },
-    UpdateExpression: 'SET ColumnNames = list_append(ColumnNames,:colColumnName)',
+    UpdateExpression: 'SET ColumnNames = :colColumnNames',
     ExpressionAttributeValues: {
-      ':colColumnName': [boardColumns],
+      ':colColumnNames': docClient.createSet(boardColumns),
     },
   };
 
