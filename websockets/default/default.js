@@ -125,9 +125,11 @@ function createNewApiGateway(event) {
  * @param {Event} event
  */
 module.exports.handler = async (event) => {
-  console.log(JSON.stringify(event, null, 2));
   /** @type {EventBody} body */
   const { message = '', boardId = '' } = JSON.parse(event.body);
+  if (message === 'ping') {
+    return keepWSConnectionAlive();
+  }
   if (!message || !boardId) {
     return {
       statusCode: 418,
@@ -168,4 +170,15 @@ if (process.env.NODE_ENV === 'development' && require.main === module) {
     .handler(event)
     .then((res) => console.log(res))
     .catch((err) => console.error(err));
+}
+
+async function keepWSConnectionAlive(event){
+  const api = createNewApiGateway(event);
+
+  const params = {
+    ConnectionId: connectionId,
+    Data: Buffer.from('pong'),
+  };
+
+  await api.postToConnection(params).promise()
 }
