@@ -74,45 +74,47 @@ const isEmpty = (obj) => {
  * @param {Note} note
  * @returns {boolean} return true false if note is valid
  */
-function isValidNote(note) {
+function isNoteDataValid(note) {
   // check if note is not object, is null/undefined, or is an array
-  if (typeof note !== 'object' || note == null || Array.isArray(note)) return false;
+  if (note == null || Array.isArray(note) || typeof note === 'object') return false;
 
-  const validNoteStructure = {
-    colour: ['white', 'yellow', 'blue', 'green'],
-    position: { top: Number(), left: Number() },
-    text: String(),
-  };
+  // const validNoteStructure = {
+  //   colour: ['white', 'yellow', 'blue', 'green'],
+  //   position: { top: Number(), left: Number() },
+  //   text: String(),
+  //   status: String(),
+  // };
 
-  // check key length is equal
-  const validNoteKeys = Object.keys(validNoteStructure);
-  const NoteKeys = Object.keys(note);
-  if (NoteKeys.length !== validNoteKeys.length) {
-    return false;
-  }
+  // // check key length is equal
+  // const validNoteKeys = Object.keys(validNoteStructure);
+  // const NoteKeys = Object.keys(note);
+  // if (NoteKeys.length !== validNoteKeys.length) {
+  //   return false;
+  // }
 
-  // check the position key length
-  if (Object.keys(validNoteStructure.position).length !== Object.keys(note?.position || {}).length) {
-    return false;
-  }
+  // // check the position key length
+  // if (Object.keys(validNoteStructure.position).length !== Object.keys(note?.position || {}).length)
+  //   {
+  //   return false;
+  // }
 
-  // check if position exists & left top are numbers
-  if (
-    typeof note?.position?.left != typeof validNoteStructure.position.left ||
-    typeof note?.position?.top != typeof validNoteStructure.position.top
-  ) {
-    return false;
-  }
+  // // check if position exists & left top are numbers
+  // if (
+  //   typeof note?.position?.left != typeof validNoteStructure.position.left ||
+  //   typeof note?.position?.top != typeof validNoteStructure.position.top
+  // ) {
+  //   return false;
+  // }
 
-  // check valid colour prop is one of colours
-  if (!validNoteStructure.colour.some((c) => c === note.colour)) {
-    return false;
-  }
+  // // check valid colour prop is one of colours
+  // if (!validNoteStructure.colour.some((c) => c === note.colour)) {
+  //   return false;
+  // }
 
-  // check valid text prop is string
-  if (typeof note.text !== typeof validNoteStructure.text) {
-    return false;
-  }
+  // // check valid text prop is string
+  // if (typeof note.text !== typeof validNoteStructure.text) {
+  //   return false;
+  // }
 
   return true;
 }
@@ -453,18 +455,20 @@ async function SaveNotesOneByOne(req, res) {
   /** @type {Note} */
   const noteData = req.body.singleNote;
 
-  switch (isValidNote(noteData)) {
+  switch (isNoteDataValid(noteData)) {
     case false:
-      errorReturn(400, 'Topic for note is invalid', res);
+      errorReturn(400, 'Note data is invalid', res);
       return;
     case true:
     default:
   }
-  noteID = req.body.noteId;
+
+  // noteID = req.body.noteId;
   const singleNote = {
-    note_id: noteID,
+    note_id: uuidv4(),
     topic: noteData,
     dateCreated: Date.now(),
+    status: 'Inserted',
   };
 
   const params = {
@@ -474,7 +478,7 @@ async function SaveNotesOneByOne(req, res) {
     },
   };
 
-  const board = await docClient.get(params).promise();
+  board = await docClient.get(params).promise();
 
   if (!board) {
     // eslint-disable-next-line consistent-return
@@ -624,10 +628,10 @@ router.patch('/board/:boardId/note/:noteId', async (req, res) => {
   /** @type {Note} */
   const textForNote = req.body.singleNote;
 
-  switch (isValidNote(textForNote)) {
+  switch (isNoteDataValid(textForNote)) {
     // typeof textForNote === 'string'
     case false:
-      errorReturn(400, 'Topic is not valid', res);
+      errorReturn(400, 'Data is invalid', res);
       break;
     case true:
     default:
