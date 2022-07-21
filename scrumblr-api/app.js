@@ -7,6 +7,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const saltRounds = 10;
+let boardColumns = [];
 
 /** FOR LOCAL TESTING */
 if (process.env.NODE_ENV === 'development') {
@@ -299,6 +300,7 @@ router.post('/board', cors(corsOptions), async (req, res) => {
       BoardId: boardId,
       BoardName: boardName,
       Passcode: hashedPassCode,
+      ColumnsName: [],
       board_notes: [],
     },
   };
@@ -503,6 +505,58 @@ async function SaveNotesOneByOne(req, res) {
     res.send(JSON.stringify(error));
   }
 }
+
+router.patch('/board/:BoardId/columns', async (req, res) => {
+  if (!('BoardId' in req.params)) {
+    boardID = '';
+  } else {
+    boardID = req.params.BoardId;
+  }
+
+  switch (isIdAlphaNumeric(boardID)) {
+    case false:
+      errorReturn(400, 'Board Id is not valid', res);
+      return;
+    case true:
+    default:
+  }
+
+  const params = {
+    TableName: TABLE_BOARD,
+    Key: {
+      BoardId: boardID,
+    },
+  };
+  board = await docClient.get(params).promise();
+
+  switch (isEmpty(board.Items)) {
+    case true:
+      errorReturn(404, 'Board not present in the database', res);
+      return;
+    case false:
+    default:
+  }
+
+  boardColumns = req.body.Columns;
+
+  const updateBoard = {
+    TableName: TABLE_BOARD,
+    Key: {
+      BoardId: boardID,
+    },
+    UpdateExpression: 'SET ColumnNames = :colColumnNames',
+    ExpressionAttributeValues: {
+      ':colColumnNames': docClient.createSet(boardColumns),
+    },
+  };
+
+  try {
+    await docClient.update(updateBoard).promise();
+    res.send(200);
+  } catch (error) {
+    res.send(JSON.stringify(error));
+  }
+});
 
 // Create a note for a specified board
 router.post('/board/:BoardId/note', async (req, res) => {
