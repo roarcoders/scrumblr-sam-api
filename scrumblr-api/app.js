@@ -76,7 +76,7 @@ const isEmpty = (obj) => {
  */
 function isNoteDataValid(note) {
   // check if note is not object, is null/undefined, or is an array
-  if (note == null || Array.isArray(note) || typeof note === 'object') return false;
+  if (note == null || Array.isArray(note) || typeof note !== 'object') return false;
 
   // const validNoteStructure = {
   //   colour: ['white', 'yellow', 'blue', 'green'],
