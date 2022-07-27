@@ -300,7 +300,6 @@ router.post('/board', cors(corsOptions), async (req, res) => {
       BoardId: boardId,
       BoardName: boardName,
       Passcode: hashedPassCode,
-      ColumnsName: [],
       board_notes: [],
     },
   };
